@@ -8,10 +8,22 @@ if (!$isAuthenticated) {
     redirect('index.php');
 }
 
-$classes = DataSchool::getClasses(); // falls du statt DataSchool -> Data nutzt: Data::getClasses()
+$raw = DataSchool::getClasses(); 
+$rows = array_map(static function(array $t): array {
+  return [
+    'klasse'  => trim(($t['klasse'] ?? '')),
+  ];
+}, $raw);
 
-view('classes', [
-  'title' => 'Schulverwaltung: Klassen',
+$entity = 'Klassen';
+
+view('entity', [
+  'title' => 'Schulverwaltung: ' . $entity,
+  'headline' => $entity,
   'isAuthenticated' => $isAuthenticated,
-  'classes' => $classes,
+   'columns' => [
+    ['label' => 'Klasse',  'field' => 'klasse'],
+  ],
+  'rows' => $rows,
+  'emptyMessage' => 'Keine ' . $entity . ' vorhanden.',
 ]);

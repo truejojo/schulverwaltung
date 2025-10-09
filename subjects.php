@@ -8,10 +8,22 @@ if (!$isAuthenticated) {
     redirect('index.php');
 }
 
-$subjects = DataSchool::getSubjects(); // falls du statt DataSchool -> Data nutzt: Data::getSubjects()
+$raw = DataSchool::getSubjects(); 
+$rows = array_map(static function(array $t): array {
+  return [
+    'fach'  => trim(($t['fach'] ?? '')),
+  ];
+}, $raw);
 
-view('subjects', [
-  'title' => 'Schulverwaltung: Fächer',
+$entity = 'Fächer';
+
+view('entity', [
+  'title' => 'Schulverwaltung: ' . $entity,
+  'headline' => $entity,
   'isAuthenticated' => $isAuthenticated,
-  'subjects' => $subjects,
+   'columns' => [
+    ['label' => 'Fach',  'field' => 'fach'],
+  ],
+  'rows' => $rows,
+  'emptyMessage' => 'Keine ' . $entity . ' vorhanden.',
 ]);

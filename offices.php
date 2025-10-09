@@ -8,10 +8,26 @@ if (!$isAuthenticated) {
     redirect('index.php');
 }
 
-$offices = DataSchool::getOffices();
+$raw = DataSchool::getOffices();
+$rows = array_map(static function(array $t): array {
+  return [
+    'vorname'  => trim(string: ($t['vorname'] ?? '')),
+    'nachname'  => trim(($t['nachname'] ?? '')),
+    'email' => trim(($t['email'] ?? '')),
+  ];
+}, $raw);
 
-view('offices', [
-  'title' => 'Schulverwaltung: Büro Assistenten',
+$entity = 'Büro Assistenten';
+
+view('entity', [
+  'title' => 'Schulverwaltung: ' . $entity,
+  'headline' => $entity,
   'isAuthenticated' => $isAuthenticated,
-  'offices' => $offices,
+    'columns' => [
+    ['label' => 'Vorname',  'field' => 'vorname'],
+    ['label' => 'Nachname',  'field' => 'nachname'],
+    ['label' => 'E-Mail','field' => 'email'],
+  ],
+  'rows' => $rows,
+  'emptyMessage' => 'Keine ' . $entity . ' vorhanden.',
 ]);

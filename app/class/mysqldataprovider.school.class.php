@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
-class DatabaseConnectionException extends RuntimeException {}
+class DatabaseConnectionException extends RuntimeException
+{
+}
 
 class MySqlDataProviderSchool extends DataProviderSchool
 {
@@ -18,17 +20,13 @@ class MySqlDataProviderSchool extends DataProviderSchool
   }
 
   // getter
-  public function getSubjects(): array
-  {
-    return $this->fetchSubjects(
-      'SELECT fach FROM faecher ORDER BY fach ASC'
-    );
-  }
+ public function getSubjects(): array
+{
+    return $this->fetchEntity("faecher", "fach");
+}
   public function getClasses(): array
   {
-    return $this->fetchClasses(
-      'SELECT klasse FROM klassen ORDER BY klasse ASC'
-    );
+    return $this->fetchEntity("klassen", "klasse");
   }
   public function getPLZ(): array
   {
@@ -42,22 +40,19 @@ class MySqlDataProviderSchool extends DataProviderSchool
   public function getTeachers(): array
   {
     return $this->fetchUsers(
-      // 'SELECT vorname, nachname FROM users WHERE role_id = 2 ORDER BY nachname ASC'
-      'SELECT vorname, nachname FROM lehrer JOIN users ON lehrer.user_id = users.id ORDER BY nachname ASC'
+      'SELECT vorname, nachname, email FROM lehrer JOIN users ON lehrer.user_id = users.id ORDER BY nachname ASC'
     );
   }
   public function getLearners(): array
   {
     return $this->fetchUsers(
-      // 'SELECT vorname, nachname FROM users WHERE role_id = 2 ORDER BY nachname ASC'
-      'SELECT vorname, nachname FROM schueler JOIN users ON schueler.user_id = users.id ORDER BY nachname ASC'
+      'SELECT vorname, nachname, email FROM schueler JOIN users ON schueler.user_id = users.id ORDER BY nachname ASC'
     );
   }
   public function getOffices(): array
   {
     return $this->fetchUsers(
-      // 'SELECT vorname, nachname FROM users WHERE role_id = 2 ORDER BY nachname ASC'
-      'SELECT vorname, nachname FROM verwaltung JOIN users ON verwaltung.user_id = users.id ORDER BY nachname ASC'
+      'SELECT vorname, nachname, email FROM verwaltung JOIN users ON verwaltung.user_id = users.id ORDER BY nachname ASC'
     );
   }
 
@@ -79,52 +74,47 @@ class MySqlDataProviderSchool extends DataProviderSchool
     return [];
   }
 
-  // private
-  private function fetchSubjects(string $sql, array $params = []): array
+  // private functions
+  private function fetchEntity(string $table, string $column): array
   {
-    $db = $this->dbConnect();
+    $rows = $this->querySQL("SELECT $column FROM $table ORDER BY $column ASC");
 
-    if (empty($params)) {
-      $statement = $db->query($sql);
-    } else {
-      $statement = $db->prepare($sql);
-      $statement->execute($params);
-    }
-    $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
-
-    return array_map(fn(array $row) => $row['fach'], $rows);
-  }
-
-  private function fetchClasses(string $sql, array $params = []): array
-  {
-    $db = $this->dbConnect();
-
-    if (empty($params)) {
-      $statement = $db->query($sql);
-    } else {
-      $statement = $db->prepare($sql);
-      $statement->execute($params);
-    }
-    $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
-
-    return array_map(fn(array $row) => $row['klasse'], $rows);
+    return array_map(static function (array $r) use ($column): array {
+      return [
+        'id' => $r['id'] ?? null,
+        $column => trim($r[$column] ?? ''),
+      ];
+    }, $rows);
   }
 
   private function fetchUsers(string $sql, array $params = []): array
   {
+    $rows = $this->querySQL($sql, $params);
+
+    return array_map(static function (array $r): array {
+      return [
+        'id' => $r['id'] ?? null,
+        'vorname' => trim($r['vorname'] ?? ''),
+        'nachname' => trim($r['nachname'] ?? ''),
+        'email' => $r['email'] ?? ''
+      ];
+    }, $rows);
+  }
+
+  private function querySQL(string $sql, array $params = []): array
+  {
     $db = $this->dbConnect();
 
-    if (empty($params)) {
-      $statement = $db->query($sql);
+    if ($params) {
+      $stmt = $db->prepare($sql);
+      $stmt->execute($params);
     } else {
-      $statement = $db->prepare($sql);
-      $statement->execute($params);
+      $stmt = $db->query($sql);
     }
-    $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
 
-    return array_map(fn(array $row) => $row['vorname'] . ' ' . $row['nachname'], $rows);
-  } 
-
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+  }
+   
   // private helper
   private function dbConnect(): PDO
   {

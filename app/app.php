@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-define('APP_PATH', dirname(__DIR__));       // ...\schulverwaltung
+define('APP_PATH', dirname(__DIR__));
 define('APP_DIR', __DIR__); 
 
 require_once APP_DIR . '/inc/config.php';
@@ -11,6 +11,8 @@ require_once APP_DIR . '/inc/auth.functions.php';
 require_once APP_DIR . '/class/data.school.class.php';
 require_once APP_DIR . '/class/dataprovider.school.class.php';
 require_once APP_DIR . '/class/mysqldataprovider.school.class.php';
+
+require_once APP_DIR . '/hooks/links.php';
 
 try {
     DataSchool::initialize(
