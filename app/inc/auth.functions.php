@@ -5,19 +5,44 @@ function is_user_authenticated(): bool {
     return isset($_SESSION['email']);
 }
 
-function authenticate_user(?string $email, ?string $password): bool {
-    if (!$email || !$password) {
+function authenticateUser(?string $email, ?string $password): bool {
+     if (!$email || !$password) {
         return false;
     }
-    // Demo (ersetzen durch DB / Users):
-    $validEmail = 'admin@example.com';
-    // Beispiel: plain = admin123  (nur Demo – in echt Passwort hashen!)
-    $validPassHash = password_hash('admin123', PASSWORD_DEFAULT);
 
-    if (strcasecmp($email, $validEmail) !== 0) {
+    $sql = '
+        SELECT u.id,
+               u.email,
+               u.password_hash,
+               u.role_id,
+               COALESCE(r.status, "") AS role_name
+        FROM users u
+        LEFT JOIN roles r ON r.id = u.role_id
+        WHERE u.email = :email
+        LIMIT 1
+    ';
+    $stmt = db()->prepare($sql);
+    $stmt->execute([':email' => $email]);
+    $row = $stmt->fetch();
+
+    if (!$row || empty($row['password_hash'])) {
         return false;
     }
-    return password_verify($password, $validPassHash);
+    if (!password_verify($password, $row['password_hash'])) {
+        return false;
+    }
+
+    if (password_needs_rehash($row['password_hash'], PASSWORD_DEFAULT)) {
+        $new = password_hash($password, PASSWORD_DEFAULT);
+        $u = db()->prepare('UPDATE users SET password_hash = :h WHERE id = :id');
+        $u->execute([':h' => $new, ':id' => $row['id']]);
+    }
+
+    $_SESSION['user_id']  = (int)$row['id'];
+    $_SESSION['email']    = $row['email'];
+    $_SESSION['role_id']  = (int)$row['role_id'];
+    $_SESSION['role']     = $row['role_name']; // optional lesbarer Name
+    return true;
 }
 
 function logout_user(): void {

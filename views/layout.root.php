@@ -30,9 +30,10 @@ $current = basename($_SERVER['PHP_SELF']);
   <title><?= htmlspecialchars($title); ?></title>
 </head>
 
-<body class="min-h-full bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200">
-  <header class="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+<body
+  class="flex flex-col min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200">
+  <header class="border-b-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
 
       <a href="index.php"
         class="p-2 rounded-md bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
@@ -101,10 +102,16 @@ $current = basename($_SERVER['PHP_SELF']);
     </div>
   </header>
 
-  <?php require isset($_viewFile)? $_viewFile : ($template ?? 'index') . '.view.php'; ?>
+  <main class="flex-1">
+    <?php require isset($_viewFile)? $_viewFile : ($template ?? 'index') . '.view.php'; ?>
+  </main>
+  <!--  -->
 
-  <footer class="mt-12 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
-    &copy; 2024 Schulverwaltung
+  <!-- <footer class="mt-12 py-6 text-sm text-gray-500 dark:text-gray-400 bg-transparent"> -->
+  <footer class="border-t-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 py-6 text-sm mt-8">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      &copy; 2025 Schulverwaltung
+    </div>
   </footer>
 
   <script>
