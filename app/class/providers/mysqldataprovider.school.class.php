@@ -20,10 +20,10 @@ class MySqlDataProviderSchool extends DataProviderSchool
   }
 
   // getter
- public function getSubjects(): array
-{
+  public function getSubjects(): array
+  {
     return $this->fetchEntity("faecher", "fach");
-}
+  }
   public function getClasses(): array
   {
     return $this->fetchEntity("klassen", "klasse");
@@ -57,21 +57,21 @@ class MySqlDataProviderSchool extends DataProviderSchool
   }
 
   // setter
-  public function setSubjects(string $newSubject): array
+  public function setSubjects(string $newSubject): bool
   {
-    return [];
+    return false;
   }
-  public function setClasses(string $newClass): array
+  public function setClasses(string $newClass): bool
   {
-    return [];
+    return false;
   }
-  public function setPLZ(int $newPLZ): array
+  public function setPLZ(int $newPLZ): bool
   {
-    return [];
+    return false;
   }
-  public function setCity(string $newCity): array
+  public function setCity(string $newCity): bool
   {
-    return [];
+    return false;
   }
 
   // private functions
@@ -114,7 +114,7 @@ class MySqlDataProviderSchool extends DataProviderSchool
 
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
   }
-   
+
   // private helper
   private function dbConnect(): PDO
   {

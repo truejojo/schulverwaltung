@@ -1,29 +1,17 @@
 <?php
 session_start();
 require __DIR__ . '/app/app.php';
+require APP_PATH . '/utility/entity.php';
 
-$isAuthenticated = is_user_authenticated();
-
-if (!$isAuthenticated) {
-    redirect('index.php');
-}
+$isAuthenticated = isAuthenticated();
 
 $raw = DataSchool::getSubjects(); 
-$rows = array_map(static function(array $t): array {
-  return [
-    'fach'  => trim(($t['fach'] ?? '')),
-  ];
-}, $raw);
+$rows = getRows($raw, ['fach']);
 
 $entity = 'Fächer';
 
-view('entity', [
-  'title' => 'Schulverwaltung: ' . $entity,
-  'headline' => $entity,
-  'isAuthenticated' => $isAuthenticated,
-   'columns' => [
-    ['label' => 'Fach',  'field' => 'fach'],
-  ],
-  'rows' => $rows,
-  'emptyMessage' => 'Keine ' . $entity . ' vorhanden.',
-]);
+$columns = [
+  ['label' => 'Fach', 'field' => 'fach'],
+];
+
+setView($entity, $isAuthenticated, $columns, $rows);
