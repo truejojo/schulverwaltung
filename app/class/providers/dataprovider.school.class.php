@@ -18,6 +18,8 @@ abstract class DataProviderSchool
 
   abstract public function getTeachers(): array;
   abstract public function getLearners(): array;
+  abstract public function getLearnersPaginated(int $page, int $perPage): array;
+
   abstract public function getOffices(): array;
 
   // setter

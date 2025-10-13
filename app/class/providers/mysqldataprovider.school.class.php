@@ -22,11 +22,57 @@ class MySqlDataProviderSchool extends DataProviderSchool
   // getter
   public function getSubjects(): array
   {
-    return $this->fetchEntity("faecher", "fach");
+    $sql = "SELECT
+      f.id,
+      f.fach,
+      COALESCE(
+        GROUP_CONCAT(
+          DISTINCT CONCAT(u.vorname, ' ', u.nachname)
+          ORDER BY u.nachname, u.vorname SEPARATOR ', '
+        ), ''
+      ) AS lehrer
+    FROM faecher f
+    LEFT JOIN lehrer_fach lf ON lf.fach_id = f.id
+    LEFT JOIN lehrer l ON l.id = lf.lehrer_id
+    LEFT JOIN users u ON u.id = l.user_id
+    GROUP BY f.id, f.fach
+    ORDER BY f.fach ASC
+  ";
+
+    $schema = [
+      'id' => ['source' => 'id', 'cast' => 'int'],
+      'fach' => ['source' => 'fach', 'trim' => true],
+      'lehrer' => ['source' => 'lehrer', 'default' => ''],
+    ];
+
+    return $this->fetchMapped($sql, $schema);
   }
+
   public function getClasses(): array
   {
-    return $this->fetchEntity("klassen", "klasse");
+    $sql = "SELECT
+      k.id,
+      k.klasse,
+      COALESCE(
+        GROUP_CONCAT(
+          DISTINCT CONCAT(u.vorname, ' ', u.nachname)
+          ORDER BY u.vorname, u.nachname SEPARATOR ', '
+        ), ''
+      ) AS klassenlehrer
+    FROM klassen k
+    LEFT JOIN klassen_lehrer kl ON kl.klasse_id = k.id
+    LEFT JOIN lehrer l ON l.id = kl.lehrer_id
+    LEFT JOIN users u ON u.id = l.user_id
+    GROUP BY k.id, k.klasse
+    ORDER BY k.klasse ASC
+  ";
+    $schema = [
+      'id' => ['source' => 'id', 'cast' => 'int'],
+      'klasse' => ['source' => 'klasse', 'trim' => true],
+      'klassenlehrer' => ['source' => 'klassenlehrer', 'default' => ''],
+    ];
+
+    return $this->fetchMapped($sql, $schema);
   }
   public function getPLZ(): array
   {
@@ -39,21 +85,109 @@ class MySqlDataProviderSchool extends DataProviderSchool
 
   public function getTeachers(): array
   {
-    return $this->fetchUsers(
-      'SELECT vorname, nachname, email FROM lehrer JOIN users ON lehrer.user_id = users.id ORDER BY nachname ASC'
-    );
+    $sql = "SELECT
+      u.id,
+      u.vorname,
+      u.nachname,
+      COALESCE(GROUP_CONCAT(DISTINCT f.fach ORDER BY f.fach SEPARATOR ' '), '') AS faecher
+    FROM lehrer l
+    JOIN users u ON u.id = l.user_id
+    LEFT JOIN lehrer_fach lf ON lf.lehrer_id = l.id
+    LEFT JOIN faecher f ON f.id = lf.fach_id
+    GROUP BY u.id, u.vorname, u.nachname
+    ORDER BY u.nachname ASC, u.vorname ASC
+  ";
+
+    $schema = [
+      'id' => ['source' => 'id', 'cast' => 'int'],
+      'vorname' => ['source' => 'vorname', 'trim' => true],
+      'nachname' => ['source' => 'nachname', 'trim' => true],
+      'faecher' => ['source' => 'faecher', 'default' => ''],
+    ];
+
+    return $this->fetchMapped($sql, $schema);
   }
   public function getLearners(): array
   {
-    return $this->fetchUsers(
-      'SELECT vorname, nachname, email FROM schueler JOIN users ON schueler.user_id = users.id ORDER BY nachname ASC'
-    );
+    $sql = 'SELECT u.id, u.vorname, u.nachname, k.klasse AS klasse
+          FROM schueler s
+          JOIN users u      ON s.user_id = u.id
+          LEFT JOIN klassen k ON s.klasse_id = k.id
+          ORDER BY u.nachname ASC, u.vorname ASC';
+    $schema = [
+      'id' => ['source' => 'id', 'cast' => 'int'],
+      'vorname' => ['source' => 'vorname', 'trim' => true],
+      'nachname' => ['source' => 'nachname', 'trim' => true],
+      'klasse' => ['source' => 'klasse', 'trim' => true],
+    ];
+
+    return $this->fetchMapped($sql, $schema);
+  }
+
+  public function getLearnersPaginated(int $page, int $perPage): array
+  {
+    $page = max(1, $page);
+    $perPage = max(1, min(100, $perPage));
+
+    // Total
+    $total = (int) $this->dbConnect()
+      ->query('SELECT COUNT(*) 
+             FROM schueler s 
+             JOIN users u ON s.user_id = u.id')
+      ->fetchColumn();
+
+    $pages = max(1, (int) ceil($total / $perPage));
+    if ($page > $pages) {
+      $page = $pages;
+    }
+    $offset = ($page - 1) * $perPage;
+
+    // Page items
+    $sql = 'SELECT u.id, u.vorname, u.nachname, k.klasse AS klasse
+          FROM schueler s
+          JOIN users u      ON s.user_id = u.id
+          LEFT JOIN klassen k ON s.klasse_id = k.id
+          ORDER BY u.nachname ASC, u.vorname ASC
+          LIMIT :limit OFFSET :offset';
+
+    $db = $this->dbConnect();
+    $stmt = $db->prepare($sql);
+    $stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+    $stmt->execute();
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $items = array_map(static fn(array $r): array => [
+      'id' => (int) $r['id'],
+      'vorname' => trim($r['vorname'] ?? ''),
+      'nachname' => trim($r['nachname'] ?? ''),
+      'klasse' => trim($r['klasse'] ?? ''),
+    ], $rows);
+
+    return [
+      'items' => $items,
+      'total' => $total,
+      'page' => $page,
+      'perPage' => $perPage,
+      'pages' => $pages,
+      'hasPrev' => $page > 1,
+      'hasNext' => $page < $pages,
+    ];
   }
   public function getOffices(): array
   {
-    return $this->fetchUsers(
-      'SELECT vorname, nachname, email FROM verwaltung JOIN users ON verwaltung.user_id = users.id ORDER BY nachname ASC'
-    );
+    $sql = 'SELECT u.id, u.vorname, u.nachname, u.email
+          FROM verwaltung v
+          JOIN users u ON v.user_id = u.id
+          ORDER BY u.nachname ASC, u.vorname ASC';
+    $schema = [
+      'id' => ['source' => 'id', 'cast' => 'int'],
+      'vorname' => ['source' => 'vorname', 'trim' => true],
+      'nachname' => ['source' => 'nachname', 'trim' => true],
+      'email' => ['source' => 'email'],
+    ];
+
+    return $this->fetchMapped($sql, $schema);
   }
 
   // setter
@@ -74,30 +208,36 @@ class MySqlDataProviderSchool extends DataProviderSchool
     return false;
   }
 
-  // private functions
-  private function fetchEntity(string $table, string $column): array
-  {
-    $rows = $this->querySQL("SELECT $column FROM $table ORDER BY $column ASC");
-
-    return array_map(static function (array $r) use ($column): array {
-      return [
-        'id' => $r['id'] ?? null,
-        $column => trim($r[$column] ?? ''),
-      ];
-    }, $rows);
-  }
-
-  private function fetchUsers(string $sql, array $params = []): array
+  // private helper
+  private function fetchMapped(string $sql, array $schema, array $params = []): array
   {
     $rows = $this->querySQL($sql, $params);
 
-    return array_map(static function (array $r): array {
-      return [
-        'id' => $r['id'] ?? null,
-        'vorname' => trim($r['vorname'] ?? ''),
-        'nachname' => trim($r['nachname'] ?? ''),
-        'email' => $r['email'] ?? ''
-      ];
+    return array_map(function (array $r) use ($schema): array {
+      $out = [];
+      foreach ($schema as $field => $def) {
+        if (is_string($def)) {
+          $val = $r[$def] ?? null;
+        } elseif (is_callable($def)) {
+          $val = $def($r);
+        } elseif (is_array($def)) {
+          $src = $def['source'] ?? $field;
+          $val = $r[$src] ?? ($def['default'] ?? null);
+          if (($def['trim'] ?? false) && is_string($val)) {
+            $val = trim($val);
+          }
+          if (isset($def['cast'])) {
+            if ($def['cast'] === 'int')
+              $val = (int) $val;
+            if ($def['cast'] === 'string')
+              $val = (string) $val;
+          }
+        } else {
+          $val = null;
+        }
+        $out[$field] = $val;
+      }
+      return $out;
     }, $rows);
   }
 
@@ -115,7 +255,6 @@ class MySqlDataProviderSchool extends DataProviderSchool
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
   }
 
-  // private helper
   private function dbConnect(): PDO
   {
     if ($this->connection instanceof PDO) {

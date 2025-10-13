@@ -36,6 +36,10 @@ class DataSchool
   {
     return self::$provider->getLearners();
   }
+  public static function getLearnersPaginated(int $page, int $perPage): array
+  {
+    return self::$provider->getLearnersPaginated($page, $perPage);
+  }
   public static function getOffices(): array
   {
     return self::$provider->getOffices();

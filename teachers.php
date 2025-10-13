@@ -6,14 +6,14 @@ require APP_PATH . '/utility/entity.php';
 $isAuthenticated = isAuthenticated();
 
 $raw = DataSchool::getTeachers();
-$rows = getRows($raw, ['vorname', 'nachname', 'email']);
+$rows = getRows($raw, ['vorname', 'nachname', 'faecher']);
 
-$entity = 'Schüler';
+$entity = 'Lehrer';
 
 $columns = [
   ['label' => 'Vorname', 'field' => 'vorname'],
   ['label' => 'Nachname', 'field' => 'nachname'],
-  ['label' => 'E-Mail', 'field' => 'email'],
+  ['label' => 'Fächer', 'field' => 'faecher'],
 ];
 
 setView($entity, $isAuthenticated, $columns, $rows);
