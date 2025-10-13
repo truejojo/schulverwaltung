@@ -5,14 +5,25 @@ require APP_PATH . '/utility/entity.php';
 
 $isAuthenticated = isAuthenticated();
 
-$raw = DataSchool::getSubjects();
-$rows = getRows($raw, ['fach', 'lehrer']);
+$page = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
+$perPage = isset($_GET['perPage']) ? max(1, min(50, (int) $_GET['perPage'])) : 20;
+$sort = isset($_GET['sort']) ? (string) $_GET['sort'] : 'fach';
+$dir = strtolower($_GET['dir'] ?? 'asc');
 
-$entity = 'Fächer';
+$result = DataSchool::getSubjectsPaginated($page, $perPage, $sort, $dir);
 
-$columns = [
-  ['label' => 'Fach', 'field' => 'fach'],
-  ['label' => 'Lehrer', 'field' => 'lehrer'],
+$rows = $result['items'];
+$pagination = [
+  'page' => $result['page'],
+  'pages' => $result['pages'],
+  'hasPrev' => $result['hasPrev'],
+  'hasNext' => $result['hasNext'],
 ];
 
-setView($entity, $isAuthenticated, $columns, $rows);
+$entity = 'Fächer';
+$columns = [
+  ['label' => 'Fach', 'field' => 'fach'],
+  ['label' => 'Lehrkräfte', 'field' => 'lehrer'],
+];
+
+setView($entity, $isAuthenticated, $columns, $rows, $pagination);

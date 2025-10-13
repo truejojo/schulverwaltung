@@ -11,16 +11,19 @@ abstract class DataProviderSchool
   }
 
   // getter
-  abstract public function getSubjects(): array;
-  abstract public function getClasses(): array;
+  // abstract public function getSubjects(): array;
+  abstract public function getSubjectsPaginated(int $page, int $perPage, string $sort = 'fach', string $dir = 'asc'): array;
+  // abstract public function getClasses(): array;
+  abstract public function getClassesPaginated(int $page, int $perPage, string $sort = 'klasse', string $dir = 'asc'): array;
   abstract public function getPLZ(): array;
   abstract public function getCity(): array;
-
-  abstract public function getTeachers(): array;
-  abstract public function getLearners(): array;
+  // abstract public function getTeachers(): array;
+  abstract public function getTeachersPaginated(int $page, int $perPage): array;
+  // abstract public function getLearners(): array;
   abstract public function getLearnersPaginated(int $page, int $perPage): array;
 
-  abstract public function getOffices(): array;
+  // abstract public function getOffices(): array;
+  abstract public function getOfficesPaginated(int $page, int $perPage, string $sort = 'nachname', string $dir = 'asc'): array;
 
   // setter
   abstract public function setSubjects(string $newSubject): bool;
