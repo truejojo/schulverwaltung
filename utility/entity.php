@@ -20,7 +20,7 @@ function getRows(array $raw, array $fields): array
   }, $raw);
 }
 
-function setView($entity, $isAuthenticated, $columns, $rows, $pagination = null): void
+function setView($entity, $isAuthenticated, $columns, $rows, $pagination = null, $search = null): void
 {
   view('entity', [
     'title' => 'Schulverwaltung: ' . $entity,
@@ -30,5 +30,6 @@ function setView($entity, $isAuthenticated, $columns, $rows, $pagination = null)
     'rows' => $rows,
     'emptyMessage' => 'Keine ' . $entity . ' vorhanden.',
     'pagination' => $pagination,
+    'search' => $search,
   ]);
 }

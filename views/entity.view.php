@@ -5,6 +5,7 @@
  * @var array    $rows
  * @var string   $emptyMessage
  * @var array|null $pagination
+ * @var array|null   $search
  */
 $emptyMessage = $emptyMessage ?? 'Keine Einträge gefunden.';
 ?>
@@ -17,6 +18,12 @@ $emptyMessage = $emptyMessage ?? 'Keine Einträge gefunden.';
     <?php goHomeLink('Zurück zur Übersicht'); ?>
   </div>
 
+  <?php if (!empty($search)): ?>
+    <div class="border rounded p-3 border-gray-200 dark:border-gray-700">
+      <?php require APP_PATH . '/components/search.view.php'; ?>
+    </div>
+  <?php endif; ?>
+
   <?php if (empty($rows)): ?>
     <div
       class="p-4 rounded bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300">
@@ -27,6 +34,7 @@ $emptyMessage = $emptyMessage ?? 'Keine Einträge gefunden.';
       <?php require APP_PATH . '/components/table.view.php'; ?>
     </div>
   <?php endif; ?>
+
   <?php if (!empty($pagination) && ($pagination['pages'] ?? 1) > 1): ?>
     <div class="mt-4 ">
       <?php require APP_PATH . '/components/pagination.view.php'; ?>

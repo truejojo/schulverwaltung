@@ -10,7 +10,10 @@ $perPage = isset($_GET['perPage']) ? max(1, min(50, (int) $_GET['perPage'])) : 2
 $sort = isset($_GET['sort']) ? (string) $_GET['sort'] : 'klasse';
 $dir = strtolower($_GET['dir'] ?? 'asc');
 
-$result = DataSchool::getClassesPaginated($page, $perPage, $sort, $dir);
+$q = trim((string) ($_GET['q'] ?? ''));
+$fields = array_values(array_filter((array) ($_GET['fields'] ?? [])));
+
+$result = DataSchool::getClassesPaginated($page, $perPage, $sort, $dir, $q, $fields);
 
 $rows = $result['items'];
 $pagination = [
@@ -26,4 +29,12 @@ $columns = [
   ['label' => 'Klassenlehrer/-in(nen)', 'field' => 'klassenlehrer', 'sortable' => false],
 ];
 
-setView($entity, $isAuthenticated, $columns, $rows, $pagination);
+$search = [
+  'q' => $q,
+  'fields' => [
+    ['key' => 'klasse', 'label' => 'Klasse'],
+    ['key' => 'klassenlehrer', 'label' => 'Klassenlehrer/-in(nen)'],
+  ],
+];
+
+setView($entity, $isAuthenticated, $columns, $rows, $pagination, $search);
