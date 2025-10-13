@@ -22,8 +22,8 @@ $pagination = [
 
 $entity = 'Fächer';
 $columns = [
-  ['label' => 'Fach', 'field' => 'fach'],
-  ['label' => 'Lehrkräfte', 'field' => 'lehrer'],
+  ['label' => 'Fach', 'field' => 'fach', 'sortable' => true],
+  ['label' => 'Lehrkräfte', 'field' => 'lehrer', 'sortable' => false],
 ];
 
 setView($entity, $isAuthenticated, $columns, $rows, $pagination);

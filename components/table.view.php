@@ -6,7 +6,7 @@ $makeSortUrl = function (string $field) use ($toggleDir) {
   $q = $_GET ?? [];
   $q['sort'] = $field;
   $q['dir'] = $toggleDir($field);
-  $q['page'] = 1; // bei neuer Sortierung auf Seite 1
+  $q['page'] = 1;
   return '?' . http_build_query($q);
 };
 $dirIcon = function (string $field) use ($currentSort, $currentDir): string {
@@ -21,12 +21,21 @@ $dirIcon = function (string $field) use ($currentSort, $currentDir): string {
     <tr>
       <th class="px-4 py-3 font-semibold">Nr</th>
       <?php foreach ($columns as $col): ?>
-        <?php $field = $col['field']; ?>
+        <?php
+        $field = $col['field'];
+        $sortable = $col['sortable'] ?? true; // per Spalte steuerbar
+        ?>
         <th class="px-4 py-3 font-semibold border-l border-2-gray-300 dark:border-gray-600">
-          <a href="<?= $makeSortUrl($field) ?>" class="inline-flex items-center gap-1 hover:underline">
-            <?= htmlspecialchars($col['label']) ?>
-            <span class="opacity-70"><?= $dirIcon($field) ?></span>
-          </a>
+          <?php if ($sortable): ?>
+            <a href="<?= $makeSortUrl($field) ?>" class="inline-flex items-center gap-1 hover:underline">
+              <?= htmlspecialchars($col['label']) ?>
+              <span class="opacity-70"><?= $dirIcon($field) ?></span>
+            </a>
+          <?php else: ?>
+            <span class="inline-flex items-center gap-1">
+              <?= htmlspecialchars($col['label']) ?>
+            </span>
+          <?php endif; ?>
         </th>
       <?php endforeach; ?>
     </tr>

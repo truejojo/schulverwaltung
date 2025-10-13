@@ -22,9 +22,9 @@ $pagination = [
 
 $entity = 'Verwaltung';
 $columns = [
-  ['label' => 'Vorname', 'field' => 'vorname'],
-  ['label' => 'Nachname', 'field' => 'nachname'],
-  ['label' => 'E-Mail', 'field' => 'email'],
+  ['label' => 'Vorname', 'field' => 'vorname', 'sortable' => true],
+  ['label' => 'Nachname', 'field' => 'nachname', 'sortable' => true],
+  ['label' => 'E-Mail', 'field' => 'email', 'sortable' => true],
 ];
 
 setView($entity, $isAuthenticated, $columns, $rows, $pagination);
