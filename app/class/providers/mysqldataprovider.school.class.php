@@ -25,44 +25,53 @@ class MySqlDataProviderSchool extends DataProviderSchool
     string $sort = 'fach',
     string $dir = 'asc',
     string $q = '',
-    array $fields = []
+    array $fields = [],
+    bool $matchAll = false
   ): array {
     $page = max(1, $page);
     $perPage = max(1, min(100, $perPage));
     $db = $this->dbConnect();
 
-    // WHERE mit eindeutigen Param-Namen
     $where = '';
     $params = [];
     $allowed = ['fach', 'lehrer'];
+
     if ($q !== '') {
-      $fields = array_values(array_intersect($fields ?: $allowed, $allowed));
-      $parts = [];
-      if (in_array('fach', $fields, true)) {
-        $parts[] = 'f.fach LIKE :q_fach';
-        $params[':q_fach'] = '%' . $q . '%';
-      }
-      if (in_array('lehrer', $fields, true)) {
-        // EXISTS korrekt verwenden (mit eindeutigen Param-Namen)
-        $parts[] =
-          "EXISTS (
+      $selectedFields = array_values(array_intersect($fields ?: $allowed, $allowed));
+      if (empty($selectedFields))
+        $selectedFields = $allowed;
+
+      $tokens = preg_split('/\s+/u', $q, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+      $tokenGroups = [];
+      foreach ($tokens as $ti => $token) {
+        $or = [];
+        if (in_array('fach', $selectedFields, true)) {
+          $or[] = "f.fach LIKE :t{$ti}_fach";
+          $params[":t{$ti}_fach"] = '%' . $token . '%';
+        }
+        if (in_array('lehrer', $selectedFields, true)) {
+          $or[] =
+            "EXISTS (
              SELECT 1
              FROM lehrer_fach lf2
              JOIN lehrer l2 ON l2.id = lf2.lehrer_id
              JOIN users u2  ON u2.id = l2.user_id
              WHERE lf2.fach_id = f.id
                AND (
-                 u2.vorname LIKE :q_lehrer_vn OR
-                 u2.nachname LIKE :q_lehrer_nn OR
-                 CONCAT(u2.vorname,' ',u2.nachname) LIKE :q_lehrer_full
+                 u2.vorname LIKE :t{$ti}_lvn OR
+                 u2.nachname LIKE :t{$ti}_lnn OR
+                 CONCAT(u2.vorname,' ',u2.nachname) LIKE :t{$ti}_lfull
                )
            )";
-        $params[':q_lehrer_vn'] = '%' . $q . '%';
-        $params[':q_lehrer_nn'] = '%' . $q . '%';
-        $params[':q_lehrer_full'] = '%' . $q . '%';
+          $params[":t{$ti}_lvn"] = '%' . $token . '%';
+          $params[":t{$ti}_lnn"] = '%' . $token . '%';
+          $params[":t{$ti}_lfull"] = '%' . $token . '%';
+        }
+        if (!empty($or))
+          $tokenGroups[] = '(' . implode(' OR ', $or) . ')';
       }
-      if ($parts) {
-        $where = 'WHERE (' . implode(' OR ', $parts) . ')';
+      if (!empty($tokenGroups)) {
+        $where = 'WHERE ' . implode($matchAll ? ' AND ' : ' OR ', $tokenGroups);
       }
     }
 
@@ -75,14 +84,12 @@ class MySqlDataProviderSchool extends DataProviderSchool
     $total = (int) $stmtTotal->fetchColumn();
 
     $pages = max(1, (int) ceil($total / $perPage));
-    if ($page > $pages) {
+    if ($page > $pages)
       $page = $pages;
-    }
     $offset = ($page - 1) * $perPage;
 
     $orderBy = $this->buildOrderBy($sort, $dir, [
       'fach' => 'f.fach %s',
-      // 'lehrer' absichtlich nicht sortierbar
     ], 'f.fach ASC');
 
     $sql = "SELECT
@@ -90,7 +97,7 @@ class MySqlDataProviderSchool extends DataProviderSchool
       f.fach,
       COALESCE(
         GROUP_CONCAT(
-          DISTINCT CONCAT(u.nachname, ', ', u.vorname)
+          DISTINCT CONCAT(u.vorname, ' ', u.nachname)
           ORDER BY u.nachname, u.vorname SEPARATOR ', '
         ), ''
       ) AS lehrer
@@ -133,47 +140,56 @@ class MySqlDataProviderSchool extends DataProviderSchool
     string $sort = 'klasse',
     string $dir = 'asc',
     string $q = '',
-    array $fields = []
+    array $fields = [],
+    bool $matchAll = false
   ): array {
     $page = max(1, $page);
     $perPage = max(1, min(100, $perPage));
     $db = $this->dbConnect();
 
-    // WHERE: Suche in Klasse und Klassenlehrer(n)
     $where = '';
     $params = [];
     $allowed = ['klasse', 'klassenlehrer'];
+
     if ($q !== '') {
-      $fields = array_values(array_intersect($fields ?: $allowed, $allowed));
-      $parts = [];
-      if (in_array('klasse', $fields, true)) {
-        $parts[] = 'k.klasse LIKE :q_klasse';
-        $params[':q_klasse'] = '%' . $q . '%';
-      }
-      if (in_array('klassenlehrer', $fields, true)) {
-        $parts[] =
-          "EXISTS (
+      $selectedFields = array_values(array_intersect($fields ?: $allowed, $allowed));
+      if (empty($selectedFields))
+        $selectedFields = $allowed;
+
+      $tokens = preg_split('/\s+/u', $q, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+      $tokenGroups = [];
+      foreach ($tokens as $ti => $token) {
+        $or = [];
+        if (in_array('klasse', $selectedFields, true)) {
+          $or[] = "k.klasse LIKE :t{$ti}_klasse";
+          $params[":t{$ti}_klasse"] = '%' . $token . '%';
+        }
+        if (in_array('klassenlehrer', $selectedFields, true)) {
+          $or[] =
+            "EXISTS (
              SELECT 1
              FROM klassen_lehrer kl2
              JOIN lehrer l2 ON l2.id = kl2.lehrer_id
              JOIN users u2  ON u2.id = l2.user_id
              WHERE kl2.klasse_id = k.id
                AND (
-                 u2.vorname LIKE :q_kl_vn OR
-                 u2.nachname LIKE :q_kl_nn OR
-                 CONCAT(u2.vorname,' ',u2.nachname) LIKE :q_kl_full
+                 u2.vorname LIKE :t{$ti}_kl_vn OR
+                 u2.nachname LIKE :t{$ti}_kl_nn OR
+                 CONCAT(u2.vorname,' ',u2.nachname) LIKE :t{$ti}_kl_full
                )
            )";
-        $params[':q_kl_vn'] = '%' . $q . '%';
-        $params[':q_kl_nn'] = '%' . $q . '%';
-        $params[':q_kl_full'] = '%' . $q . '%';
+          $params[":t{$ti}_kl_vn"] = '%' . $token . '%';
+          $params[":t{$ti}_kl_nn"] = '%' . $token . '%';
+          $params[":t{$ti}_kl_full"] = '%' . $token . '%';
+        }
+        if (!empty($or))
+          $tokenGroups[] = '(' . implode(' OR ', $or) . ')';
       }
-      if ($parts) {
-        $where = 'WHERE (' . implode(' OR ', $parts) . ')';
+      if (!empty($tokenGroups)) {
+        $where = 'WHERE ' . implode($matchAll ? ' AND ' : ' OR ', $tokenGroups);
       }
     }
 
-    // Total (gefiltert)
     $totalSql = "SELECT COUNT(DISTINCT k.id) FROM klassen k $where";
     $stmtTotal = $db->prepare($totalSql);
     foreach ($params as $kParam => $vParam) {
@@ -187,7 +203,6 @@ class MySqlDataProviderSchool extends DataProviderSchool
       $page = $pages;
     $offset = ($page - 1) * $perPage;
 
-    // Aggregat nicht sortierbar
     $orderBy = $this->buildOrderBy($sort, $dir, [
       'klasse' => 'k.klasse %s',
     ], 'k.klasse ASC');
@@ -197,7 +212,7 @@ class MySqlDataProviderSchool extends DataProviderSchool
       k.klasse,
       COALESCE(
         GROUP_CONCAT(
-          DISTINCT CONCAT(u.nachname, ', ', u.vorname)
+          DISTINCT CONCAT(u.vorname, ' ', u.nachname)
           ORDER BY u.nachname, u.vorname SEPARATOR ', '
         ), ''
       ) AS klassenlehrer
@@ -249,40 +264,53 @@ class MySqlDataProviderSchool extends DataProviderSchool
     string $sort = 'nachname',
     string $dir = 'asc',
     string $q = '',
-    array $fields = []
+    array $fields = [],
+    bool $matchAll = false
   ): array {
     $page = max(1, $page);
     $perPage = max(1, min(100, $perPage));
-
     $db = $this->dbConnect();
 
-    // WHERE mit eindeutigen Param-Namen
     $where = '';
     $params = [];
     $allowed = ['vorname', 'nachname', 'faecher'];
+
     if ($q !== '') {
-      $fields = array_values(array_intersect($fields ?: $allowed, $allowed));
-      $parts = [];
-      if (in_array('vorname', $fields, true)) {
-        $parts[] = 'u.vorname LIKE :q_vorname';
-        $params[':q_vorname'] = '%' . $q . '%';
+      $selectedFields = array_values(array_intersect($fields ?: $allowed, $allowed));
+      if (empty($selectedFields))
+        $selectedFields = $allowed;
+
+      $tokens = preg_split('/\s+/u', $q, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+      $tokenGroups = [];
+      foreach ($tokens as $ti => $token) {
+        $or = [];
+        if (in_array('vorname', $selectedFields, true)) {
+          $or[] = "u.vorname LIKE :t{$ti}_vn";
+          $params[":t{$ti}_vn"] = '%' . $token . '%';
+        }
+        if (in_array('nachname', $selectedFields, true)) {
+          $or[] = "u.nachname LIKE :t{$ti}_nn";
+          $params[":t{$ti}_nn"] = '%' . $token . '%';
+        }
+        if (in_array('faecher', $selectedFields, true)) {
+          $or[] =
+            "EXISTS (
+             SELECT 1
+             FROM lehrer_fach lf2
+             JOIN faecher f2 ON f2.id = lf2.fach_id
+             WHERE lf2.lehrer_id = l.id
+               AND f2.fach LIKE :t{$ti}_fach
+           )";
+          $params[":t{$ti}_fach"] = '%' . $token . '%';
+        }
+        if (!empty($or))
+          $tokenGroups[] = '(' . implode(' OR ', $or) . ')';
       }
-      if (in_array('nachname', $fields, true)) {
-        $parts[] = 'u.nachname LIKE :q_nachname';
-        $params[':q_nachname'] = '%' . $q . '%';
-      }
-      if (in_array('faecher', $fields, true)) {
-        $parts[] =
-          'EXISTS (SELECT 1 FROM lehrer_fach lf2 JOIN faecher f2 ON f2.id = lf2.fach_id
-                 WHERE lf2.lehrer_id = l.id AND f2.fach LIKE :q_fach)';
-        $params[':q_fach'] = '%' . $q . '%';
-      }
-      if ($parts) {
-        $where = 'WHERE (' . implode(' OR ', $parts) . ')';
+      if (!empty($tokenGroups)) {
+        $where = 'WHERE ' . implode($matchAll ? ' AND ' : ' OR ', $tokenGroups);
       }
     }
 
-    // Total gefiltert
     $totalSql = "SELECT COUNT(DISTINCT l.id)
                FROM lehrer l
                JOIN users u ON u.id = l.user_id
@@ -295,9 +323,8 @@ class MySqlDataProviderSchool extends DataProviderSchool
     $total = (int) $stmtTotal->fetchColumn();
 
     $pages = max(1, (int) ceil($total / $perPage));
-    if ($page > $pages) {
+    if ($page > $pages)
       $page = $pages;
-    }
     $offset = ($page - 1) * $perPage;
 
     $orderBy = $this->buildOrderBy($sort, $dir, [
@@ -350,42 +377,58 @@ class MySqlDataProviderSchool extends DataProviderSchool
     string $sort = 'nachname',
     string $dir = 'asc',
     string $q = '',
-    array $fields = []
+    array $fields = [],
+    bool $matchAll = false
   ): array {
     $page = max(1, $page);
     $perPage = max(1, min(100, $perPage));
     $db = $this->dbConnect();
 
-    // WHERE: Vorname/Nachname/Klasse
     $where = '';
     $params = [];
     $allowed = ['vorname', 'nachname', 'klasse'];
+
     if ($q !== '') {
-      $fields = array_values(array_intersect($fields ?: $allowed, $allowed));
-      $parts = [];
-      if (in_array('vorname', $fields, true)) {
-        $parts[] = 'u.vorname LIKE :q_vn';
-        $params[':q_vn'] = '%' . $q . '%';
+      // Felder: wenn nichts gewählt → alle erlaubten
+      $selectedFields = array_values(array_intersect($fields ?: $allowed, $allowed));
+      if (empty($selectedFields)) {
+        $selectedFields = $allowed;
       }
-      if (in_array('nachname', $fields, true)) {
-        $parts[] = 'u.nachname LIKE :q_nn';
-        $params[':q_nn'] = '%' . $q . '%';
+
+      // Tokens (whitespace-separiert)
+      $tokens = preg_split('/\s+/u', $q, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+      $tokenGroups = [];
+
+      foreach ($tokens as $ti => $token) {
+        $or = [];
+        if (in_array('vorname', $selectedFields, true)) {
+          $or[] = "u.vorname LIKE :t{$ti}_vn";
+          $params[":t{$ti}_vn"] = '%' . $token . '%';
+        }
+        if (in_array('nachname', $selectedFields, true)) {
+          $or[] = "u.nachname LIKE :t{$ti}_nn";
+          $params[":t{$ti}_nn"] = '%' . $token . '%';
+        }
+        if (in_array('klasse', $selectedFields, true)) {
+          $or[] = "k.klasse LIKE :t{$ti}_kl";
+          $params[":t{$ti}_kl"] = '%' . $token . '%';
+        }
+        if (!empty($or)) {
+          $tokenGroups[] = '(' . implode(' OR ', $or) . ')';
+        }
       }
-      if (in_array('klasse', $fields, true)) {
-        $parts[] = 'k.klasse LIKE :q_klasse';
-        $params[':q_klasse'] = '%' . $q . '%';
-      }
-      if ($parts) {
-        $where = 'WHERE (' . implode(' OR ', $parts) . ')';
+
+      if (!empty($tokenGroups)) {
+        $where = 'WHERE ' . implode($matchAll ? ' AND ' : ' OR ', $tokenGroups);
       }
     }
 
-    // Total gefiltert
-    $totalSql = "SELECT COUNT(*) 
-                 FROM schueler s
-                 JOIN users u ON s.user_id = u.id
-                 LEFT JOIN klassen k ON s.klasse_id = k.id
-                 $where";
+    // Total (gefiltert)
+    $totalSql = "SELECT COUNT(*)
+               FROM schueler s
+               JOIN users u ON s.user_id = u.id
+               LEFT JOIN klassen k ON s.klasse_id = k.id
+               $where";
     $stmtTotal = $db->prepare($totalSql);
     foreach ($params as $kParam => $vParam) {
       $stmtTotal->bindValue($kParam, $vParam, PDO::PARAM_STR);
@@ -405,12 +448,12 @@ class MySqlDataProviderSchool extends DataProviderSchool
     ], 'u.nachname ASC, u.vorname ASC');
 
     $sql = "SELECT u.id, u.vorname, u.nachname, k.klasse AS klasse
-            FROM schueler s
-            JOIN users u      ON s.user_id = u.id
-            LEFT JOIN klassen k ON s.klasse_id = k.id
-            $where
-            ORDER BY $orderBy
-            LIMIT :limit OFFSET :offset";
+          FROM schueler s
+          JOIN users u        ON s.user_id = u.id
+          LEFT JOIN klassen k ON s.klasse_id = k.id
+          $where
+          ORDER BY $orderBy
+          LIMIT :limit OFFSET :offset";
 
     $stmt = $db->prepare($sql);
     foreach ($params as $kParam => $vParam) {
@@ -445,45 +488,53 @@ class MySqlDataProviderSchool extends DataProviderSchool
     string $sort = 'nachname',
     string $dir = 'asc',
     string $q = '',
-    array $fields = []
+    array $fields = [],
+    bool $matchAll = false
   ): array {
     $page = max(1, $page);
     $perPage = max(1, min(100, $perPage));
-
     $db = $this->dbConnect();
 
-    // WHERE: Vorname/Nachname/Email
     $where = '';
     $params = [];
     $allowed = ['vorname', 'nachname', 'email'];
+
     if ($q !== '') {
-      $fields = array_values(array_intersect($fields ?: $allowed, $allowed));
-      $parts = [];
-      if (in_array('vorname', $fields, true)) {
-        $parts[] = 'u.vorname LIKE :q_vn';
-        $params[':q_vn'] = '%' . $q . '%';
+      $selectedFields = array_values(array_intersect($fields ?: $allowed, $allowed));
+      if (empty($selectedFields))
+        $selectedFields = $allowed;
+
+      $tokens = preg_split('/\s+/u', $q, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+      $tokenGroups = [];
+      foreach ($tokens as $ti => $token) {
+        $or = [];
+        if (in_array('vorname', $selectedFields, true)) {
+          $or[] = "u.vorname LIKE :t{$ti}_vn";
+          $params[":t{$ti}_vn"] = '%' . $token . '%';
+        }
+        if (in_array('nachname', $selectedFields, true)) {
+          $or[] = "u.nachname LIKE :t{$ti}_nn";
+          $params[":t{$ti}_nn"] = '%' . $token . '%';
+        }
+        if (in_array('email', $selectedFields, true)) {
+          $or[] = "u.email LIKE :t{$ti}_em";
+          $params[":t{$ti}_em"] = '%' . $token . '%';
+        }
+        if (!empty($or))
+          $tokenGroups[] = '(' . implode(' OR ', $or) . ')';
       }
-      if (in_array('nachname', $fields, true)) {
-        $parts[] = 'u.nachname LIKE :q_nn';
-        $params[':q_nn'] = '%' . $q . '%';
-      }
-      if (in_array('email', $fields, true)) {
-        $parts[] = 'u.email LIKE :q_email';
-        $params[':q_email'] = '%' . $q . '%';
-      }
-      if ($parts) {
-        $where = 'WHERE (' . implode(' OR ', $parts) . ')';
+      if (!empty($tokenGroups)) {
+        $where = 'WHERE ' . implode($matchAll ? ' AND ' : ' OR ', $tokenGroups);
       }
     }
 
-    // Total gefiltert
-    $totalSql = "SELECT COUNT(*) 
-                 FROM verwaltung v
-                 JOIN users u ON u.id = v.user_id
-                 $where";
+    $totalSql = "SELECT COUNT(*)
+               FROM verwaltung v
+               JOIN users u ON u.id = v.user_id
+               $where";
     $stmtTotal = $db->prepare($totalSql);
-    foreach ($params as $kParam => $vParam) {
-      $stmtTotal->bindValue($kParam, $vParam, PDO::PARAM_STR);
+    foreach ($params as $k => $v) {
+      $stmtTotal->bindValue($k, $v, PDO::PARAM_STR);
     }
     $stmtTotal->execute();
     $total = (int) $stmtTotal->fetchColumn();
@@ -500,15 +551,15 @@ class MySqlDataProviderSchool extends DataProviderSchool
     ], 'u.nachname ASC, u.vorname ASC');
 
     $sql = "SELECT u.id, u.vorname, u.nachname, u.email
-            FROM verwaltung v
-            JOIN users u ON u.id = v.user_id
-            $where
-            ORDER BY $orderBy
-            LIMIT :limit OFFSET :offset";
+          FROM verwaltung v
+          JOIN users u ON u.id = v.user_id
+          $where
+          ORDER BY $orderBy
+          LIMIT :limit OFFSET :offset";
 
     $stmt = $db->prepare($sql);
-    foreach ($params as $kParam => $vParam) {
-      $stmt->bindValue($kParam, $vParam, PDO::PARAM_STR);
+    foreach ($params as $k => $v) {
+      $stmt->bindValue($k, $v, PDO::PARAM_STR);
     }
     $stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
     $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);

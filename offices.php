@@ -12,8 +12,9 @@ $dir = strtolower($_GET['dir'] ?? 'asc');
 
 $q = trim((string) ($_GET['q'] ?? ''));
 $fields = array_values(array_filter((array) ($_GET['fields'] ?? [])));
+$matchAll = isset($_GET['all']) && $_GET['all'] === '1';
 
-$result = DataSchool::getOfficesPaginated($page, $perPage, $sort, $dir, $q, $fields);
+$result = DataSchool::getOfficesPaginated($page, $perPage, $sort, $dir, $q, $fields, $matchAll);
 
 $rows = $result['items'];
 $pagination = [
@@ -32,6 +33,7 @@ $columns = [
 
 $search = [
   'q' => $q,
+  'all' => $matchAll,
   'fields' => [
     ['key' => 'vorname', 'label' => 'Vorname'],
     ['key' => 'nachname', 'label' => 'Nachname'],

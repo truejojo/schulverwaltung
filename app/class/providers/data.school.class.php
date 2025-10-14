@@ -19,27 +19,25 @@ class DataSchool
     return self::$provider->getCity();
   }
 
-  public static function getLearnersPaginated(int $page, int $perPage, string $sort = 'nachname', string $dir = 'asc', string $q = '', array $fields = []): array
+  public static function getLearnersPaginated(int $page, int $perPage, string $sort = 'nachname', string $dir = 'asc', string $q = '', array $fields = [], bool $matchAll = false): array
   {
-    return self::$provider->getLearnersPaginated($page, $perPage, $sort, $dir, $q, $fields);
+    return self::$provider->getLearnersPaginated($page, $perPage, $sort, $dir, $q, $fields, $matchAll);
   }
-
-  public static function getTeachersPaginated(int $page, int $perPage, string $sort = 'nachname', string $dir = 'asc', string $q = '', array $fields = []): array
+  public static function getTeachersPaginated(int $page, int $perPage, string $sort = 'nachname', string $dir = 'asc', string $q = '', array $fields = [], bool $matchAll = false): array
   {
-    return self::$provider->getTeachersPaginated($page, $perPage, $sort, $dir, $q, $fields);
+    return self::$provider->getTeachersPaginated($page, $perPage, $sort, $dir, $q, $fields, $matchAll);
   }
-  public static function getSubjectsPaginated(int $page, int $perPage, string $sort = 'fach', string $dir = 'asc', string $q = '', array $fields = []): array
+  public static function getSubjectsPaginated(int $page, int $perPage, string $sort = 'fach', string $dir = 'asc', string $q = '', array $fields = [], bool $matchAll = false): array
   {
-    return self::$provider->getSubjectsPaginated($page, $perPage, $sort, $dir, $q, $fields);
+    return self::$provider->getSubjectsPaginated($page, $perPage, $sort, $dir, $q, $fields, $matchAll);
   }
-
-  public static function getOfficesPaginated(int $page, int $perPage, string $sort = 'nachname', string $dir = 'asc', string $q = '', array $fields = []): array
+  public static function getClassesPaginated(int $page, int $perPage, string $sort = 'klasse', string $dir = 'asc', string $q = '', array $fields = [], bool $matchAll = false): array
   {
-    return self::$provider->getOfficesPaginated($page, $perPage, $sort, $dir, $q, $fields);
+    return self::$provider->getClassesPaginated($page, $perPage, $sort, $dir, $q, $fields, $matchAll);
   }
-  public static function getClassesPaginated(int $page, int $perPage, string $sort = 'klasse', string $dir = 'asc', string $q = '', array $fields = []): array
+  public static function getOfficesPaginated(int $page, int $perPage, string $sort = 'nachname', string $dir = 'asc', string $q = '', array $fields = [], bool $matchAll = false): array
   {
-    return self::$provider->getClassesPaginated($page, $perPage, $sort, $dir, $q, $fields);
+    return self::$provider->getOfficesPaginated($page, $perPage, $sort, $dir, $q, $fields, $matchAll);
   }
 
 
