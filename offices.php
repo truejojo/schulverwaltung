@@ -4,6 +4,8 @@ require __DIR__ . '/app/app.php';
 require APP_PATH . '/utility/entity.php';
 
 $isAuthenticated = isAuthenticated();
+$officesLinks = getOfficesLinks($isAuthenticated);
+
 
 $page = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
 $perPage = isset($_GET['perPage']) ? max(1, min(50, (int) $_GET['perPage'])) : 20;
@@ -17,28 +19,14 @@ $matchAll = isset($_GET['all']) && $_GET['all'] === '1';
 $result = DataSchool::getOfficesPaginated($page, $perPage, $sort, $dir, $q, $fields, $matchAll);
 
 $rows = $result['items'];
-$pagination = [
-  'page' => $result['page'],
-  'pages' => $result['pages'],
-  'hasPrev' => $result['hasPrev'],
-  'hasNext' => $result['hasNext'],
-];
+$pagination = getPaginationLinks($isAuthenticated, $result);
 
-$entity = 'Verwaltung';
-$columns = [
-  ['label' => 'Vorname', 'field' => 'vorname', 'sortable' => true],
-  ['label' => 'Nachname', 'field' => 'nachname', 'sortable' => true],
-  ['label' => 'E-Mail', 'field' => 'email', 'sortable' => true],
-];
-
+$entity = $officesLinks['entity'];
+$columns = $officesLinks['columns'];
 $search = [
   'q' => $q,
   'all' => $matchAll,
-  'fields' => [
-    ['key' => 'vorname', 'label' => 'Vorname'],
-    ['key' => 'nachname', 'label' => 'Nachname'],
-    ['key' => 'faecher', 'label' => 'E-Mail'],
-  ],
+  'fields' => $officesLinks['fields'],
 ];
 
 setView($entity, $isAuthenticated, $columns, $rows, $pagination, $search);

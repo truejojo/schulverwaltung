@@ -4,6 +4,7 @@ require __DIR__ . '/app/app.php';
 require APP_PATH . '/utility/entity.php';
 
 $isAuthenticated = isAuthenticated();
+$classesLinks = getClassesLinks($isAuthenticated);
 
 $page = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
 $perPage = isset($_GET['perPage']) ? max(1, min(50, (int) $_GET['perPage'])) : 20;
@@ -17,26 +18,14 @@ $matchAll = isset($_GET['all']) && $_GET['all'] === '1';
 $result = DataSchool::getClassesPaginated($page, $perPage, $sort, $dir, $q, $fields, $matchAll);
 
 $rows = $result['items'];
-$pagination = [
-  'page' => $result['page'],
-  'pages' => $result['pages'],
-  'hasPrev' => $result['hasPrev'],
-  'hasNext' => $result['hasNext'],
-];
+$pagination = getPaginationLinks($isAuthenticated, $result);
 
-$entity = 'Klassen';
-$columns = [
-  ['label' => 'Klasse', 'field' => 'klasse', 'sortable' => true],
-  ['label' => 'Klassenlehrer/-in(nen)', 'field' => 'klassenlehrer', 'sortable' => false],
-];
-
+$entity = $classesLinks['entity'];
+$columns = $classesLinks['columns'];
 $search = [
   'q' => $q,
   'all' => $matchAll,
-  'fields' => [
-    ['key' => 'klasse', 'label' => 'Klasse'],
-    ['key' => 'klassenlehrer', 'label' => 'Klassenlehrer/-in(nen)'],
-  ],
+  'fields' => $classesLinks['fields'],
 ];
 
 setView($entity, $isAuthenticated, $columns, $rows, $pagination, $search);
