@@ -672,4 +672,130 @@ class MySqlDataProviderSchool extends DataProviderSchool
       throw new DatabaseConnectionException('Verbindungsfehler zur Datenbank');
     }
   }
+
+  // Mutations
+  public function deleteSubject(int $id): bool
+  {
+    $db = $this->dbConnect();
+    $db->beginTransaction();
+    try {
+      $stmt = $db->prepare('DELETE FROM lehrer_fach WHERE fach_id = :id');
+      $stmt->execute([':id' => $id]);
+
+      $stmt = $db->prepare('DELETE FROM faecher WHERE id = :id');
+      $stmt->execute([':id' => $id]);
+
+      $db->commit();
+      return true;
+    } catch (Throwable $e) {
+      if ($db->inTransaction()) $db->rollBack();
+      return false;
+    }
+  }
+
+  public function deleteClass(int $id): bool
+  {
+    $db = $this->dbConnect();
+    $db->beginTransaction();
+    try {
+      // Lehrer-Zuordnungen zur Klasse entfernen
+      $stmt = $db->prepare('DELETE FROM klassen_lehrer WHERE klasse_id = :id');
+      $stmt->execute([':id' => $id]);
+
+      // Schüler aus Klasse lösen (auf NULL setzen, falls Spalte NULL erlaubt)
+      try {
+        $stmt = $db->prepare('UPDATE schueler SET klasse_id = NULL WHERE klasse_id = :id');
+        $stmt->execute([':id' => $id]);
+      } catch (Throwable $e) {
+        // Falls NOT NULL → ignore oder vorher Schema anpassen
+      }
+
+      // Klasse löschen
+      $stmt = $db->prepare('DELETE FROM klassen WHERE id = :id');
+      $stmt->execute([':id' => $id]);
+
+      $db->commit();
+      return true;
+    } catch (Throwable $e) {
+      if ($db->inTransaction()) $db->rollBack();
+      return false;
+    }
+  }
+
+  public function deleteTeacher(int $userId): bool
+  {
+    $db = $this->dbConnect();
+    $db->beginTransaction();
+    try {
+      // Lehrer-ID ermitteln
+      $stmt = $db->prepare('SELECT id FROM lehrer WHERE user_id = :uid LIMIT 1');
+      $stmt->execute([':uid' => $userId]);
+      $lehrerId = (int)($stmt->fetchColumn() ?: 0);
+      if ($lehrerId > 0) {
+        // Zuordnungen entfernen
+        $stmt = $db->prepare('DELETE FROM lehrer_fach WHERE lehrer_id = :lid');
+        $stmt->execute([':lid' => $lehrerId]);
+
+        $stmt = $db->prepare('DELETE FROM klassen_lehrer WHERE lehrer_id = :lid');
+        $stmt->execute([':lid' => $lehrerId]);
+
+        // Lehrer-Datensatz löschen
+        $stmt = $db->prepare('DELETE FROM lehrer WHERE id = :lid');
+        $stmt->execute([':lid' => $lehrerId]);
+      }
+
+      // Optional: User selbst NICHT löschen (falls Login erhalten bleiben soll)
+      // Wenn doch entfernen:
+      // $stmt = $db->prepare('DELETE FROM users WHERE id = :uid');
+      // $stmt->execute([':uid' => $userId]);
+
+      $db->commit();
+      return true;
+    } catch (Throwable $e) {
+      if ($db->inTransaction()) $db->rollBack();
+      return false;
+    }
+  }
+
+  public function deleteLearner(int $userId): bool
+  {
+    $db = $this->dbConnect();
+    $db->beginTransaction();
+    try {
+      // Schüler-Datensatz löschen
+      $stmt = $db->prepare('DELETE FROM schueler WHERE user_id = :uid');
+      $stmt->execute([':uid' => $userId]);
+
+      // Optional: User nicht löschen (analog Lehrer)
+      // $stmt = $db->prepare('DELETE FROM users WHERE id = :uid');
+      // $stmt->execute([':uid' => $userId]);
+
+      $db->commit();
+      return true;
+    } catch (Throwable $e) {
+      if ($db->inTransaction()) $db->rollBack();
+      return false;
+    }
+  }
+
+  public function deleteOffice(int $userId): bool
+  {
+    $db = $this->dbConnect();
+    $db->beginTransaction();
+    try {
+      // Verwaltungseintrag löschen
+      $stmt = $db->prepare('DELETE FROM verwaltung WHERE user_id = :uid');
+      $stmt->execute([':uid' => $userId]);
+
+      // Optional: User nicht löschen
+      // $stmt = $db->prepare('DELETE FROM users WHERE id = :uid');
+      // $stmt->execute([':uid' => $userId]);
+
+      $db->commit();
+      return true;
+    } catch (Throwable $e) {
+      if ($db->inTransaction()) $db->rollBack();
+      return false;
+    }
+  }
 }

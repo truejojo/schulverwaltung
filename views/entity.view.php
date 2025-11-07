@@ -8,6 +8,12 @@
  * @var array|null   $search
  */
 $emptyMessage = $emptyMessage ?? 'Keine Einträge gefunden.';
+
+// gleiche Bedingung wie in der Tabelle
+$canManage =
+  (function_exists('is_user_authenticated') ? is_user_authenticated() : false) &&
+  (function_exists('user_has_role_id') ? user_has_role_id(3) : false) &&
+  (function_exists('user_is_verwaltungs_admin') ? user_is_verwaltungs_admin() : false);
 ?>
 
 <div class="max-w-5xl mx-auto py-8 px-4 space-y-6">
@@ -25,7 +31,7 @@ $emptyMessage = $emptyMessage ?? 'Keine Einträge gefunden.';
   </div>
   <?php endif; ?>
 
-  <?php if (!empty($rows)): ?>
+  <?php if (!empty($rows) && $canManage): ?>
   <div class="border rounded p-3 border-gray-200 dark:border-gray-700">
     <?php require APP_PATH . '/components/add-entity.view.php'; ?>
   </div>

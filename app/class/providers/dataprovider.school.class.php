@@ -30,4 +30,11 @@ abstract class DataProviderSchool
   abstract public function setClasses(string $newClass): bool;
   abstract public function setPLZ(int $newPLZ): bool;
   abstract public function setCity(string $newCity): bool;
+
+  // Mutation function
+  abstract public function deleteSubject(int $id): bool;
+  abstract public function deleteLearner(int $id): bool;
+  abstract public function deleteTeacher(int $id): bool;
+  abstract public function deleteOffice(int $id): bool;
+  abstract public function deleteClass(int $id): bool;
 }

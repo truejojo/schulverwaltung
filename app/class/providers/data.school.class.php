@@ -61,4 +61,26 @@ class DataSchool
   {
     return self::$provider->setCity($newCity);
   }
+
+  // Mutation function
+  public static function deleteSubject(int $id): bool
+  {
+    return self::$provider->deleteSubject($id);
+  }
+  public static function deleteLearner(int $id): bool
+  {
+    return self::$provider->deleteLearner($id);
+  }
+  public static function deleteTeacher(int $id): bool
+  {
+    return self::$provider->deleteTeacher($id);
+  }
+  public static function deleteOffice(int $id): bool
+  {
+    return self::$provider->deleteOffice($id);
+  }
+  public static function deleteClass(int $id): bool
+  {
+    return self::$provider->deleteClass($id);
+  }
 }
