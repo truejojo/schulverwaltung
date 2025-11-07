@@ -21,38 +21,50 @@ $dirIcon = function (string $field) use ($currentSort, $currentDir): string {
     <tr>
       <th class="px-4 py-3 font-semibold">Nr</th>
       <?php foreach ($columns as $col): ?>
-        <?php
+      <?php
         $field = $col['field'];
         $sortable = $col['sortable'] ?? true; // per Spalte steuerbar
         ?>
-        <th class="px-4 py-3 font-semibold border-l border-2-gray-300 dark:border-gray-600">
-          <?php if ($sortable): ?>
-            <a href="<?= $makeSortUrl($field) ?>" class="inline-flex items-center gap-1 hover:underline">
-              <?= htmlspecialchars($col['label']) ?>
-              <span class="opacity-70"><?= $dirIcon($field) ?></span>
-            </a>
-          <?php else: ?>
-            <span class="inline-flex items-center gap-1">
-              <?= htmlspecialchars($col['label']) ?>
-            </span>
-          <?php endif; ?>
-        </th>
+      <th class="px-4 py-3 font-semibold border-l border-2-gray-300 dark:border-gray-600">
+        <?php if ($sortable): ?>
+        <a href="<?= $makeSortUrl($field) ?>" class="inline-flex items-center gap-1 hover:underline">
+          <?= htmlspecialchars($col['label']) ?>
+          <span class="opacity-70"><?= $dirIcon($field) ?></span>
+        </a>
+        <?php else: ?>
+        <span class="inline-flex items-center gap-1">
+          <?= htmlspecialchars($col['label']) ?>
+        </span>
+        <?php endif; ?>
+      </th>
       <?php endforeach; ?>
+      <th class="px-4 py-3 font-semibold text-green-400 border-l border-2-gray-300 dark:border-gray-600 text-center">
+        Bearbeiten</th>
+      <th class="px-4 py-3 font-semibold text-red-400 border-l border-2-gray-300 dark:border-gray-600 text-center">
+        Löschen</th>
     </tr>
   </thead>
   <tbody class="">
     <?php foreach ($rows as $i => $r): ?>
-      <tr class="transition <?= $i % 2 === 0 ? 'bg-gray-50 dark:bg-gray-700/50 hover:dark:bg-gray-500/50' : 'bg-gray-150 dark:bg-gray-800/50 
+    <tr class="transition <?= $i % 2 === 0 ? 'bg-gray-50 dark:bg-gray-700/50 hover:dark:bg-gray-500/50' : 'bg-gray-150 dark:bg-gray-800/50 
        hover:dark:bg-gray-500/50' ?>">
-        <td class="px-4 py-2 whitespace-nowrap text-gray-700 dark:text-gray-200 w-[20px]">
-          <?= htmlspecialchars((string) ($i + 1)) ?>
-        </td>
-        <?php foreach ($columns as $col): ?>
-          <td class="px-4 py-2 whitespace-nowrap text-gray-700 dark:text-gray-200">
-            <?= htmlspecialchars((string) ($r[$col['field']] ?? '')) ?>
-          </td>
-        <?php endforeach; ?>
-      </tr>
+      <td class="px-4 py-2 whitespace-nowrap text-gray-700 dark:text-gray-200 w-[20px]">
+        <?= htmlspecialchars((string) ($i + 1)) ?>
+      </td>
+      <?php foreach ($columns as $col): ?>
+      <td class="px-4 py-2 whitespace-nowrap text-gray-700 dark:text-gray-200">
+        <?= htmlspecialchars((string) ($r[$col['field']] ?? '')) ?>
+      </td>
+      <?php endforeach; ?>
+      <td
+        class="px-4 py-2 whitespace-nowrap text-green-400 font-bold w-[20px] text-center hover:bg-green-400 hover:text-white transition cursor-pointer">
+        ✓
+      </td>
+      <td
+        class="px-4 py-2 whitespace-nowrap text-red-400 font-bold w-[20px] text-center hover:bg-red-400 hover:text-white transition cursor-pointer">
+        x
+      </td>
+    </tr>
     <?php endforeach; ?>
   </tbody>
 </table>
