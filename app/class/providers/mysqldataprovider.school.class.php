@@ -481,105 +481,105 @@ class MySqlDataProviderSchool extends DataProviderSchool
     ];
   }
 
-  public function getOfficesPaginated(
-    int $page,
-    int $perPage,
-    string $sort = 'nachname',
-    string $dir = 'asc',
-    string $q = '',
-    array $fields = [],
-    bool $matchAll = false
-  ): array {
-    $page = max(1, $page);
-    $perPage = max(1, min(100, $perPage));
-    $db = $this->dbConnect();
+  // public function getOfficesPaginated(
+  //   int $page,
+  //   int $perPage,
+  //   string $sort = 'nachname',
+  //   string $dir = 'asc',
+  //   string $q = '',
+  //   array $fields = [],
+  //   bool $matchAll = false
+  // ): array {
+  //   $page = max(1, $page);
+  //   $perPage = max(1, min(100, $perPage));
+  //   $db = $this->dbConnect();
 
-    $where = '';
-    $params = [];
-    $allowed = ['vorname', 'nachname', 'email'];
+  //   $where = '';
+  //   $params = [];
+  //   $allowed = ['vorname', 'nachname', 'email'];
 
-    if ($q !== '') {
-      $selectedFields = array_values(array_intersect($fields ?: $allowed, $allowed));
-      if (empty($selectedFields))
-        $selectedFields = $allowed;
+  //   if ($q !== '') {
+  //     $selectedFields = array_values(array_intersect($fields ?: $allowed, $allowed));
+  //     if (empty($selectedFields))
+  //       $selectedFields = $allowed;
 
-      $tokens = preg_split('/\s+/u', $q, -1, PREG_SPLIT_NO_EMPTY) ?: [];
-      $tokenGroups = [];
-      foreach ($tokens as $ti => $token) {
-        $or = [];
-        if (in_array('vorname', $selectedFields, true)) {
-          $or[] = "u.vorname LIKE :t{$ti}_vn";
-          $params[":t{$ti}_vn"] = '%' . $token . '%';
-        }
-        if (in_array('nachname', $selectedFields, true)) {
-          $or[] = "u.nachname LIKE :t{$ti}_nn";
-          $params[":t{$ti}_nn"] = '%' . $token . '%';
-        }
-        if (in_array('email', $selectedFields, true)) {
-          $or[] = "u.email LIKE :t{$ti}_em";
-          $params[":t{$ti}_em"] = '%' . $token . '%';
-        }
-        if (!empty($or))
-          $tokenGroups[] = '(' . implode(' OR ', $or) . ')';
-      }
-      if (!empty($tokenGroups)) {
-        $where = 'WHERE ' . implode($matchAll ? ' AND ' : ' OR ', $tokenGroups);
-      }
-    }
+  //     $tokens = preg_split('/\s+/u', $q, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+  //     $tokenGroups = [];
+  //     foreach ($tokens as $ti => $token) {
+  //       $or = [];
+  //       if (in_array('vorname', $selectedFields, true)) {
+  //         $or[] = "u.vorname LIKE :t{$ti}_vn";
+  //         $params[":t{$ti}_vn"] = '%' . $token . '%';
+  //       }
+  //       if (in_array('nachname', $selectedFields, true)) {
+  //         $or[] = "u.nachname LIKE :t{$ti}_nn";
+  //         $params[":t{$ti}_nn"] = '%' . $token . '%';
+  //       }
+  //       if (in_array('email', $selectedFields, true)) {
+  //         $or[] = "u.email LIKE :t{$ti}_em";
+  //         $params[":t{$ti}_em"] = '%' . $token . '%';
+  //       }
+  //       if (!empty($or))
+  //         $tokenGroups[] = '(' . implode(' OR ', $or) . ')';
+  //     }
+  //     if (!empty($tokenGroups)) {
+  //       $where = 'WHERE ' . implode($matchAll ? ' AND ' : ' OR ', $tokenGroups);
+  //     }
+  //   }
 
-    $totalSql = "SELECT COUNT(*)
-               FROM verwaltung v
-               JOIN users u ON u.id = v.user_id
-               $where";
-    $stmtTotal = $db->prepare($totalSql);
-    foreach ($params as $k => $v) {
-      $stmtTotal->bindValue($k, $v, PDO::PARAM_STR);
-    }
-    $stmtTotal->execute();
-    $total = (int) $stmtTotal->fetchColumn();
+  //   $totalSql = "SELECT COUNT(*)
+  //              FROM verwaltung v
+  //              JOIN users u ON u.id = v.user_id
+  //              $where";
+  //   $stmtTotal = $db->prepare($totalSql);
+  //   foreach ($params as $k => $v) {
+  //     $stmtTotal->bindValue($k, $v, PDO::PARAM_STR);
+  //   }
+  //   $stmtTotal->execute();
+  //   $total = (int) $stmtTotal->fetchColumn();
 
-    $pages = max(1, (int) ceil($total / $perPage));
-    if ($page > $pages)
-      $page = $pages;
-    $offset = ($page - 1) * $perPage;
+  //   $pages = max(1, (int) ceil($total / $perPage));
+  //   if ($page > $pages)
+  //     $page = $pages;
+  //   $offset = ($page - 1) * $perPage;
 
-    $orderBy = $this->buildOrderBy($sort, $dir, [
-      'vorname' => 'u.vorname %s, u.nachname ASC',
-      'nachname' => 'u.nachname %s, u.vorname ASC',
-      'email' => 'u.email %s, u.nachname ASC',
-    ], 'u.nachname ASC, u.vorname ASC');
+  //   $orderBy = $this->buildOrderBy($sort, $dir, [
+  //     'vorname' => 'u.vorname %s, u.nachname ASC',
+  //     'nachname' => 'u.nachname %s, u.vorname ASC',
+  //     'email' => 'u.email %s, u.nachname ASC',
+  //   ], 'u.nachname ASC, u.vorname ASC');
 
-    $sql = "SELECT u.id, u.vorname, u.nachname, u.email
-          FROM verwaltung v
-          JOIN users u ON u.id = v.user_id
-          $where
-          ORDER BY $orderBy
-          LIMIT :limit OFFSET :offset";
+  //   $sql = "SELECT u.id, u.vorname, u.nachname, u.email
+  //         FROM verwaltung v
+  //         JOIN users u ON u.id = v.user_id
+  //         $where
+  //         ORDER BY $orderBy
+  //         LIMIT :limit OFFSET :offset";
 
-    $stmt = $db->prepare($sql);
-    foreach ($params as $k => $v) {
-      $stmt->bindValue($k, $v, PDO::PARAM_STR);
-    }
-    $stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
-    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
-    $stmt->execute();
-    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+  //   $stmt = $db->prepare($sql);
+  //   foreach ($params as $k => $v) {
+  //     $stmt->bindValue($k, $v, PDO::PARAM_STR);
+  //   }
+  //   $stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
+  //   $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+  //   $stmt->execute();
+  //   $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    return [
-      'items' => array_map(static fn($r) => [
-        'id' => (int) $r['id'],
-        'vorname' => trim($r['vorname'] ?? ''),
-        'nachname' => trim($r['nachname'] ?? ''),
-        'email' => trim($r['email'] ?? ''),
-      ], $rows),
-      'total' => $total,
-      'page' => $page,
-      'perPage' => $perPage,
-      'pages' => $pages,
-      'hasPrev' => $page > 1,
-      'hasNext' => $page < $pages,
-    ];
-  }
+  //   return [
+  //     'items' => array_map(static fn($r) => [
+  //       'id' => (int) $r['id'],
+  //       'vorname' => trim($r['vorname'] ?? ''),
+  //       'nachname' => trim($r['nachname'] ?? ''),
+  //       'email' => trim($r['email'] ?? ''),
+  //     ], $rows),
+  //     'total' => $total,
+  //     'page' => $page,
+  //     'perPage' => $perPage,
+  //     'pages' => $pages,
+  //     'hasPrev' => $page > 1,
+  //     'hasNext' => $page < $pages,
+  //   ];
+  // }
 
   // setter
   public function setSubjects(string $newSubject): bool
@@ -797,5 +797,431 @@ class MySqlDataProviderSchool extends DataProviderSchool
       if ($db->inTransaction()) $db->rollBack();
       return false;
     }
+  }
+
+  public function getSubjectById(int $id): ?array
+  {
+    $db = $this->dbConnect();
+    $stmt = $db->prepare('SELECT id, fach FROM faecher WHERE id = :id');
+    $stmt->execute([':id' => $id]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$row) return null;
+    return [
+      'id' => (int)$row['id'],
+      'fach' => trim((string)($row['fach'] ?? '')),
+    ];
+  }
+
+  public function updateSubject(int $id, string $fach): bool
+  {
+    $db = $this->dbConnect();
+    $stmt = $db->prepare('UPDATE faecher SET fach = :fach WHERE id = :id');
+    return $stmt->execute([':fach' => $fach, ':id' => $id]);
+  }
+
+  public function getTeacherByUserId(int $userId): ?array
+  {
+    $db = $this->dbConnect();
+    $stmt = $db->prepare('SELECT u.id, u.vorname, u.nachname
+                              FROM users u
+                              INNER JOIN lehrer l ON l.user_id = u.id
+                              WHERE u.id = :uid
+                              LIMIT 1');
+    $stmt->execute([':uid' => $userId]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    return $row ? ['id' => (int)$row['id'], 'vorname' => (string)$row['vorname'], 'nachname' => (string)$row['nachname']] : null;
+  }
+
+  public function updateTeacher(int $userId, string $vorname, string $nachname): bool
+  {
+    $db = $this->dbConnect();
+    $stmt = $db->prepare('UPDATE users SET vorname = :vn, nachname = :nn WHERE id = :uid');
+    return $stmt->execute([':vn' => $vorname, ':nn' => $nachname, ':uid' => $userId]);
+  }
+
+  // public function getOfficeByUserId(int $userId): ?array
+  // {
+  //   $db = $this->dbConnect();
+  //   $stmt = $db->prepare('SELECT u.id, u.vorname, u.nachname, u.email
+  //                             FROM users u
+  //                             INNER JOIN verwaltung v ON v.user_id = u.id
+  //                             WHERE u.id = :uid
+  //                             LIMIT 1');
+  //   $stmt->execute([':uid' => $userId]);
+  //   $row = $stmt->fetch(PDO::FETCH_ASSOC);
+  //   return $row ? ['id' => (int)$row['id'], 'vorname' => (string)$row['vorname'], 'nachname' => (string)$row['nachname'], 'email' => (string)$row['email']] : null;
+  // }
+
+  // public function updateOffice(int $userId, string $vorname, string $nachname, string $email): bool
+  // {
+  //   $db = $this->dbConnect();
+  //   $stmt = $db->prepare('UPDATE users SET vorname = :vn, nachname = :nn, email = :em WHERE id = :uid');
+  //   return $stmt->execute([':vn' => $vorname, ':nn' => $nachname, ':em' => $email, ':uid' => $userId]);
+  // }
+
+  public function getLearnerByUserId(int $userId): ?array
+  {
+    $db = $this->dbConnect();
+    $stmt = $db->prepare('SELECT u.id, u.vorname, u.nachname, s.klasse_id
+                              FROM users u
+                              INNER JOIN schueler s ON s.user_id = u.id
+                              WHERE u.id = :uid
+                              LIMIT 1');
+    $stmt->execute([':uid' => $userId]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    return $row ? [
+      'id' => (int)$row['id'],
+      'vorname' => (string)$row['vorname'],
+      'nachname' => (string)$row['nachname'],
+      'klasse_id' => isset($row['klasse_id']) ? (int)$row['klasse_id'] : null,
+    ] : null;
+  }
+
+  public function updateLearner(int $userId, string $vorname, string $nachname, int $klasseId): bool
+  {
+    $db = $this->dbConnect();
+    $db->beginTransaction();
+    try {
+      $stmt = $db->prepare('UPDATE users SET vorname = :vn, nachname = :nn WHERE id = :uid');
+      $stmt->execute([':vn' => $vorname, ':nn' => $nachname, ':uid' => $userId]);
+
+      $stmt = $db->prepare('UPDATE schueler SET klasse_id = :kid WHERE user_id = :uid');
+      $stmt->execute([':kid' => $klasseId, ':uid' => $userId]);
+
+      $db->commit();
+      return true;
+    } catch (Throwable $e) {
+      if ($db->inTransaction()) $db->rollBack();
+      return false;
+    }
+  }
+
+  public function getClassById(int $id): ?array
+  {
+    $db = $this->dbConnect();
+    $stmt = $db->prepare('SELECT id, klasse FROM klassen WHERE id = :id');
+    $stmt->execute([':id' => $id]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    return $row ? ['id' => (int)$row['id'], 'klasse' => (string)$row['klasse']] : null;
+  }
+
+  public function updateClass(int $id, string $klasse): bool
+  {
+    $db = $this->dbConnect();
+    $stmt = $db->prepare('UPDATE klassen SET klasse = :klasse WHERE id = :id');
+    return $stmt->execute([':klasse' => $klasse, ':id' => $id]);
+  }
+
+  public function getAllClasses(): array
+  {
+    $db = $this->dbConnect();
+    $stmt = $db->query('SELECT id, klasse FROM klassen ORDER BY klasse ASC');
+    return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+  }
+
+  // Subjects
+  public function getAllSubjects(): array
+  {
+    $db = $this->dbConnect();
+    $stmt = $db->query('SELECT id, fach FROM faecher ORDER BY fach ASC');
+    return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+  }
+
+  public function getTeacherSubjectIds(int $userId): array
+  {
+    $db = $this->dbConnect();
+    // lehrer_id ermitteln
+    $stmt = $db->prepare('SELECT id FROM lehrer WHERE user_id = :uid LIMIT 1');
+    $stmt->execute([':uid' => $userId]);
+    $lehrerId = (int)($stmt->fetchColumn() ?: 0);
+    if ($lehrerId <= 0) return [];
+    $stmt = $db->prepare('SELECT fach_id FROM lehrer_fach WHERE lehrer_id = :lid');
+    $stmt->execute([':lid' => $lehrerId]);
+    return array_map('intval', array_column($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [], 'fach_id'));
+  }
+
+  public function updateTeacherSubjects(int $userId, array $subjectIds): bool
+  {
+    $db = $this->dbConnect();
+    $db->beginTransaction();
+    try {
+      // lehrer_id
+      $stmt = $db->prepare('SELECT id FROM lehrer WHERE user_id = :uid LIMIT 1');
+      $stmt->execute([':uid' => $userId]);
+      $lehrerId = (int)($stmt->fetchColumn() ?: 0);
+      if ($lehrerId <= 0) throw new RuntimeException('Lehrer nicht gefunden');
+
+      // Bestehende löschen
+      $stmt = $db->prepare('DELETE FROM lehrer_fach WHERE lehrer_id = :lid');
+      $stmt->execute([':lid' => $lehrerId]);
+
+      // Neue Zuordnungen
+      if (!empty($subjectIds)) {
+        $stmt = $db->prepare('INSERT INTO lehrer_fach (lehrer_id, fach_id) VALUES (:lid, :fid)');
+        foreach ($subjectIds as $sid) {
+          $sid = (int)$sid;
+          if ($sid > 0) $stmt->execute([':lid' => $lehrerId, ':fid' => $sid]);
+        }
+      }
+
+      $db->commit();
+      return true;
+    } catch (Throwable $e) {
+      if ($db->inTransaction()) $db->rollBack();
+      return false;
+    }
+  }
+
+  // Verwaltungsrollen
+  // public function getAllVerwaltungsRollen(): array
+  // {
+  //   $db = $this->dbConnect();
+  //   $stmt = $db->query('SELECT * FROM verwaltungs_rollen ORDER BY id ASC');
+  //   $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+  //   // Label-Feld tolerant bestimmen
+  //   foreach ($rows as &$r) {
+  //     $label = $r['bezeichnung'] ?? ($r['name'] ?? ($r['rolle'] ?? null));
+  //     $r['label'] = $label ?? ('Rolle #' . (int)$r['id']);
+  //   }
+  //   return $rows;
+  // }
+
+  // public function getVerwaltungsrollenMap(): array
+  // {
+  //   $map = [];
+  //   foreach ($this->getAllVerwaltungsRollen() as $r) {
+  //     $map[(int)$r['id']] = (string)$r['label'];
+  //   }
+  //   return $map;
+  // }
+
+  // Offices
+  public function getOfficeByUserId(int $userId): ?array
+  {
+    $db = $this->dbConnect();
+    $stmt = $db->prepare('SELECT u.id, u.vorname, u.nachname, v.verwaltungs_rolle_id
+                              FROM users u
+                              INNER JOIN verwaltung v ON v.user_id = u.id
+                              WHERE u.id = :uid LIMIT 1');
+    $stmt->execute([':uid' => $userId]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$row) return null;
+    return [
+      'id' => (int)$row['id'],
+      'vorname' => (string)$row['vorname'],
+      'nachname' => (string)$row['nachname'],
+      'verwaltungs_rolle_id' => (int)($row['verwaltungs_rolle_id'] ?? 0),
+    ];
+  }
+
+  public function updateOffice(int $userId, string $vorname, string $nachname, int $verwaltungsRolleId): bool
+  {
+    $db = $this->dbConnect();
+    $db->beginTransaction();
+    try {
+      $stmt = $db->prepare('UPDATE users SET vorname = :vn, nachname = :nn WHERE id = :uid');
+      $stmt->execute([':vn' => $vorname, ':nn' => $nachname, ':uid' => $userId]);
+
+      $stmt = $db->prepare('UPDATE verwaltung SET verwaltungs_rolle_id = :rid WHERE user_id = :uid');
+      $stmt->execute([':rid' => $verwaltungsRolleId, ':uid' => $userId]);
+
+      $db->commit();
+      return true;
+    } catch (Throwable $e) {
+      if ($db->inTransaction()) $db->rollBack();
+      return false;
+    }
+  }
+
+  // Classes – Lehrer-Zuordnung
+  public function getAllTeachersForAssign(): array
+  {
+    $db = $this->dbConnect();
+    $stmt = $db->query('SELECT l.id, u.vorname, u.nachname
+                            FROM lehrer l
+                            INNER JOIN users u ON u.id = l.user_id
+                            ORDER BY u.nachname, u.vorname');
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    return array_map(fn($r) => [
+      'id' => (int)$r['id'], // lehrer.id
+      'name' => trim(($r['nachname'] ?? '') . ', ' . ($r['vorname'] ?? '')),
+    ], $rows);
+  }
+
+  public function getTeacherIdsByClassId(int $classId): array
+  {
+    $db = $this->dbConnect();
+    $stmt = $db->prepare('SELECT lehrer_id FROM klassen_lehrer WHERE klasse_id = :cid');
+    $stmt->execute([':cid' => $classId]);
+    return array_map('intval', array_column($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [], 'lehrer_id'));
+  }
+
+  public function updateClassTeachers(int $classId, array $teacherIds): bool
+  {
+    $db = $this->dbConnect();
+    $db->beginTransaction();
+    try {
+      $stmt = $db->prepare('DELETE FROM klassen_lehrer WHERE klasse_id = :cid');
+      $stmt->execute([':cid' => $classId]);
+
+      if (!empty($teacherIds)) {
+        $stmt = $db->prepare('INSERT INTO klassen_lehrer (klasse_id, lehrer_id) VALUES (:cid, :lid)');
+        foreach ($teacherIds as $lid) {
+          $lid = (int)$lid;
+          if ($lid > 0) $stmt->execute([':cid' => $classId, ':lid' => $lid]);
+        }
+      }
+
+      $db->commit();
+      return true;
+    } catch (Throwable $e) {
+      if ($db->inTransaction()) $db->rollBack();
+      return false;
+    }
+  }
+
+  public function getAllOfficesWithRoles(): array
+  {
+    $db = $this->dbConnect();
+    $stmt = $db->query(
+      'SELECT u.id, u.vorname, u.nachname, v.verwaltungs_rolle_id
+         FROM verwaltung v
+         INNER JOIN users u ON u.id = v.user_id
+         ORDER BY u.nachname, u.vorname'
+    );
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    // Rollen-Map holen
+    $rollenMap = $this->getVerwaltungsrollenMap();
+    foreach ($rows as &$r) {
+      $rid = (int)($r['verwaltungs_rolle_id'] ?? 0);
+      $r['position'] = $rollenMap[$rid] ?? 'Unbekannt';
+    }
+    return $rows;
+  }
+
+  public function getOfficesPaginated(
+    int $page,
+    int $perPage,
+    ?string $sort,
+    string $dir,
+    ?string $q,
+    array $fields,
+    bool $matchAll
+  ): array {
+    $db = $this->dbConnect();
+    $stmt = $db->query('
+        SELECT u.id, u.vorname, u.nachname, v.verwaltungs_rolle_id
+        FROM verwaltung v
+        INNER JOIN users u ON u.id = v.user_id
+    ');
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+    $rollenMap = $this->getVerwaltungsrollenMap();
+    foreach ($rows as &$r) {
+      $rid = (int)($r['verwaltungs_rolle_id'] ?? 0);
+      $r['position'] = $rollenMap[$rid] ?? 'Unbekannt';
+    }
+
+    $searchFields = [];
+    foreach ($fields as $f) {
+      $searchFields[] = is_array($f) ? (string)($f['key'] ?? '') : (string)$f;
+    }
+    $searchFields = array_filter($searchFields) ?: ['vorname', 'nachname', 'position'];
+
+    if ($q) {
+      $qLower = mb_strtolower($q);
+      $terms = preg_split('/\s+/', $qLower, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+      $rows = array_values(array_filter($rows, function ($r) use ($terms, $searchFields, $matchAll) {
+        $hay = [];
+        foreach ($searchFields as $f) $hay[] = mb_strtolower((string)($r[$f] ?? ''));
+        $text = implode(' ', $hay);
+        if ($matchAll) {
+          foreach ($terms as $t) if (mb_strpos($text, $t) === false) return false;
+          return true;
+        }
+        foreach ($terms as $t) if (mb_strpos($text, $t) !== false) return true;
+        return empty($terms);
+      }));
+    }
+
+    $sort = $sort ?: 'nachname';
+    $dir = strtolower($dir) === 'desc' ? 'desc' : 'asc';
+    $allowedSort = ['vorname', 'nachname', 'position'];
+    if (!in_array($sort, $allowedSort, true)) $sort = 'nachname';
+
+    usort($rows, function ($a, $b) use ($sort, $dir) {
+      $va = mb_strtolower((string)($a[$sort] ?? ''));
+      $vb = mb_strtolower((string)($b[$sort] ?? ''));
+      $cmp = $va <=> $vb;
+      return $dir === 'desc' ? -$cmp : $cmp;
+    });
+
+    $total = count($rows);
+    $perPage = max(1, $perPage);
+    $pages = max(1, (int)ceil($total / $perPage));
+    $page = max(1, min($page, $pages));
+    $offset = ($page - 1) * $perPage;
+    $items = array_slice($rows, $offset, $perPage);
+
+    return [
+      'items'    => $items,
+      'total'    => $total,
+      'pages'    => $pages,
+      'page'     => $page,
+      'perPage'  => $perPage,
+      'hasPrev'  => $page > 1,
+      'hasNext'  => $page < $pages,
+      'prevPage' => $page > 1 ? $page - 1 : null,
+      'nextPage' => $page < $pages ? $page + 1 : null,
+    ];
+  }
+
+  public function getAllVerwaltungsRollen(): array
+  {
+    $db = $this->dbConnect();
+    $stmt = $db->query('SELECT * FROM verwaltungs_rollen ORDER BY id ASC');
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+    // Mögliche Spaltennamen für die Bezeichnung
+    $candidates = [
+      'bezeichnung',
+      'beschreibung',
+      'titel',
+      'title',
+      'name',
+      'rolle',
+      'rollenname',
+      'positionsname',
+      'position',
+      'verwaltungsrolle',
+      'label'
+    ];
+    // Fallback-Mapping lt. Vorgabe
+    $defaults = [1 => 'Direktor', 2 => 'Sekretariat', 3 => 'Admin', 4 => 'Hausmeister'];
+
+    foreach ($rows as &$r) {
+      $label = null;
+      foreach ($candidates as $col) {
+        if (isset($r[$col]) && trim((string)$r[$col]) !== '') {
+          $label = trim((string)$r[$col]);
+          break;
+        }
+      }
+      $id = (int)($r['id'] ?? 0);
+      if (!$label && isset($defaults[$id])) {
+        $label = $defaults[$id];
+      }
+      $r['label'] = $label ?: ('Rolle #' . $id);
+    }
+    return $rows;
+  }
+
+  public function getVerwaltungsrollenMap(): array
+  {
+    $map = [];
+    foreach ($this->getAllVerwaltungsRollen() as $r) {
+      $map[(int)$r['id']] = (string)$r['label'];
+    }
+    return $map;
   }
 }

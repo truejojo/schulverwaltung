@@ -22,6 +22,7 @@ $canManage =
 
 $slug = strtolower(pathinfo($_SERVER['SCRIPT_NAME'], PATHINFO_FILENAME));
 $deleteAction = 'actions/' . $slug . '/delete.php';
+$editAction   = 'actions/' . $slug . '/edit.php';
 ?>
 
 <table class="min-w-full text-left text-sm">
@@ -58,21 +59,24 @@ $deleteAction = 'actions/' . $slug . '/delete.php';
     <?php foreach ($rows as $i => $r): ?>
     <tr
       class="transition <?= $i % 2 === 0 ? 'bg-gray-50 dark:bg-gray-700/50 hover:dark:bg-gray-500/50' : 'bg-gray-150 dark:bg-gray-800/50 hover:dark:bg-gray-500/50' ?>">
-      <td class="px-4 py-2 whitespace-nowrap text-gray-700 dark:text-gray-200 w-[20px]">
+      <td class="px-4 py-2 text-gray-700 dark:text-gray-200 w-[20px]">
         <?= htmlspecialchars((string) ($i + 1)) ?>
       </td>
       <?php foreach ($columns as $col): ?>
-      <td class="px-4 py-2 whitespace-nowrap text-gray-700 dark:text-gray-200">
+      <td class="px-4 py-2 text-gray-700 dark:text-gray-200">
         <?= htmlspecialchars((string) ($r[$col['field']] ?? '')) ?>
       </td>
       <?php endforeach; ?>
 
       <?php if ($canManage): ?>
       <td
-        class="px-4 py-2 whitespace-nowrap text-green-400 font-bold w-[20px] text-center hover:bg-green-400 hover:text-white transition cursor-pointer"
-        title="Bearbeiten">✓</td>
+        class="px-4 py-2 text-green-400 font-bold w-[20px] text-center hover:bg-green-400 hover:text-white transition cursor-pointer"
+        title="Bearbeiten">
+        <a href="<?= htmlspecialchars($editAction . '?id=' . (int)($r['id'] ?? 0)) ?>"
+          class="block w-full h-full text-inherit">✓</a>
+      </td>
       <td
-        class="px-4 py-2 whitespace-nowrap text-red-400 font-bold w-[20px] text-center hover:bg-red-400 hover:text-white transition cursor-pointer"
+        class="px-4 py-2 text-red-400 font-bold w-[20px] text-center hover:bg-red-400 hover:text-white transition cursor-pointer"
         title="Löschen">
         <form method="post" action="<?= htmlspecialchars($deleteAction) ?>"
           onsubmit="return confirm('Diesen Eintrag wirklich löschen?');">

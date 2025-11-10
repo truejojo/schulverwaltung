@@ -20,8 +20,9 @@ $result = DataSchool::getOfficesPaginated(
 $rows = $result['items'];
 $pagination = getPaginationLinks($isAuthenticated, $result);
 
-$entity = $officesLinks['entity'];
+$entity  = $officesLinks['entity'];
 $columns = $officesLinks['columns'];
 $search  = buildSearchContext($params['q'], $params['matchAll'], $officesLinks['fields']);
 
+// Einheitlich wie learners.php: kein zusätzliches require/layout hier
 setView($entity, $isAuthenticated, $columns, $rows, $pagination, $search);

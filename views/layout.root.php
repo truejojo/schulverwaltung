@@ -12,6 +12,8 @@ $current = basename($_SERVER['PHP_SELF']);
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <!-- Basis-URL für alle relativen Links -->
+  <base href="/grundlagen/schulverwaltung/">
   <script>
   // Verhindert Flash: vor Tailwind Klassen setzen
   (function() {
@@ -46,7 +48,7 @@ $current = basename($_SERVER['PHP_SELF']);
       </a>
       <nav class="flex items-center">
         <a href="index.php" class="mr-4 flex items-center gap-1 hover:underline
-                <?= $current==='index.php'?'font-semibold':'' ?>
+                <?= $current === 'index.php' ? 'font-semibold' : '' ?>
                 text-gray-600 dark:text-gray-600 hover:text-white dark:hover:text-black">
           <svg
             class="w-5 h-5 text-gray-800 dark:text-gray-400 hover:text-gray-400 dark:hover:text-gray-100 transition-colors"
@@ -59,7 +61,7 @@ $current = basename($_SERVER['PHP_SELF']);
 
         <?php if (!$isAuthenticated): ?>
         <a href="login.php"
-          class="mr-4 hover:underline <?= $current==='login.php'?'font-semibold':'' ?> flex items-center gap-1 text-gray-700 dark:text-gray-300">
+          class="mr-4 hover:underline <?= $current === 'login.php' ? 'font-semibold' : '' ?> flex items-center gap-1 text-gray-700 dark:text-gray-300">
           <!-- Login Icon -->
           <svg class="w-5 h-5 text-orange-500 dark:text-orange-300 hover:text-orange-700 dark:hover:text-orange-200"
             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
@@ -103,7 +105,7 @@ $current = basename($_SERVER['PHP_SELF']);
   </header>
 
   <main class="flex-1">
-    <?php require isset($_viewFile)? $_viewFile : ($template ?? 'index') . '.view.php'; ?>
+    <?php require isset($_viewFile) ? $_viewFile : ($template ?? 'index') . '.view.php'; ?>
   </main>
   <!--  -->
 

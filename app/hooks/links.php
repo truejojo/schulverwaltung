@@ -25,10 +25,10 @@ function getClassesLinks(bool $isAuthenticated): array
     ['label' => 'Klassenlehrer/-in(nen)', 'field' => 'klassenlehrer', 'sortable' => false],
   ];
 
-    $fields = [
+  $fields = [
     ['key' => 'klasse', 'label' => 'Klasse'],
     ['key' => 'klassenlehrer', 'label' => 'Klassenlehrer/-in(nen)'],
-    ];
+  ];
 
   $all = [
     'entity' => 'Klassen',
@@ -45,7 +45,7 @@ function getLearnersLinks(bool $isAuthenticated): array
     ['label' => 'Nachname', 'field' => 'nachname', 'sortable' => true],
     ['label' => 'Klasse', 'field' => 'klasse', 'sortable' => true],
   ];
- 
+
   $fields = [
     ['key' => 'vorname', 'label' => 'Vorname'],
     ['key' => 'nachname', 'label' => 'Nachname'],
@@ -65,13 +65,13 @@ function getOfficesLinks(bool $isAuthenticated): array
   $columns = [
     ['label' => 'Vorname', 'field' => 'vorname', 'sortable' => true],
     ['label' => 'Nachname', 'field' => 'nachname', 'sortable' => true],
-    ['label' => 'E-Mail', 'field' => 'email', 'sortable' => true],
+    ['label' => 'Position', 'field' => 'position', 'sortable' => true],
   ];
 
   $fields = [
     ['key' => 'vorname', 'label' => 'Vorname'],
     ['key' => 'nachname', 'label' => 'Nachname'],
-    ['key' => 'faecher', 'label' => 'E-Mail'],
+    ['key' => 'position', 'label' => 'Position'],
   ];
 
   $all = [
@@ -110,11 +110,11 @@ function getTeachersLinks(bool $isAuthenticated): array
     ['label' => 'Fächer', 'field' => 'faecher', 'sortable' => false],
   ];
 
-   $fields = [
+  $fields = [
     ['key' => 'vorname', 'label' => 'Vorname'],
     ['key' => 'nachname', 'label' => 'Nachname'],
     ['key' => 'faecher', 'label' => 'Fächer'],
-   ];
+  ];
 
   $all = [
     'entity' => 'Lehrer',
@@ -128,11 +128,11 @@ function getTeachersLinks(bool $isAuthenticated): array
 function getPaginationLinks(bool $isAuthenticated, array $result): array
 {
   $pagination = [
-  'page' => $result['page'],
-  'pages' => $result['pages'],
-  'hasPrev' => $result['hasPrev'],
-  'hasNext' => $result['hasNext'],
-];
+    'page' => $result['page'],
+    'pages' => $result['pages'],
+    'hasPrev' => $result['hasPrev'],
+    'hasNext' => $result['hasNext'],
+  ];
 
   return $isAuthenticated ? $pagination : [];
 }

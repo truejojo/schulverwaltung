@@ -35,10 +35,10 @@ class DataSchool
   {
     return self::$provider->getClassesPaginated($page, $perPage, $sort, $dir, $q, $fields, $matchAll);
   }
-  public static function getOfficesPaginated(int $page, int $perPage, string $sort = 'nachname', string $dir = 'asc', string $q = '', array $fields = [], bool $matchAll = false): array
-  {
-    return self::$provider->getOfficesPaginated($page, $perPage, $sort, $dir, $q, $fields, $matchAll);
-  }
+  // public static function getOfficesPaginated(int $page, int $perPage, string $sort = 'nachname', string $dir = 'asc', string $q = '', array $fields = [], bool $matchAll = false): array
+  // {
+  //   return self::$provider->getOfficesPaginated($page, $perPage, $sort, $dir, $q, $fields, $matchAll);
+  // }
 
 
   // setter
@@ -75,6 +75,26 @@ class DataSchool
   {
     return self::$provider->deleteTeacher($id);
   }
+
+  // Verwaltungsrollen
+  public static function getAllVerwaltungsRollen(): array
+  {
+    return self::$provider->getAllVerwaltungsRollen();
+  }
+  public static function getVerwaltungsrollenMap(): array
+  {
+    return self::$provider->getVerwaltungsrollenMap();
+  }
+
+  // Offices: statt Email die Rolle ändern
+  public static function getOfficeByUserId(int $userId): ?array
+  {
+    return self::$provider->getOfficeByUserId($userId);
+  }
+  public static function updateOffice(int $userId, string $vorname, string $nachname, int $verwaltungsRolleId): bool
+  {
+    return self::$provider->updateOffice($userId, $vorname, $nachname, $verwaltungsRolleId);
+  }
   public static function deleteOffice(int $id): bool
   {
     return self::$provider->deleteOffice($id);
@@ -82,5 +102,96 @@ class DataSchool
   public static function deleteClass(int $id): bool
   {
     return self::$provider->deleteClass($id);
+  }
+
+  // Subjects
+  public static function getAllSubjects(): array
+  {
+    return self::$provider->getAllSubjects();
+  }
+  public static function getTeacherSubjectIds(int $userId): array
+  {
+    return self::$provider->getTeacherSubjectIds($userId);
+  }
+  public static function updateTeacherSubjects(int $userId, array $subjectIds): bool
+  {
+    return self::$provider->updateTeacherSubjects($userId, $subjectIds);
+  }
+  public static function getSubjectById(int $id): ?array
+  {
+    return self::$provider->getSubjectById($id);
+  }
+  public static function updateSubject(int $id, string $fach): bool
+  {
+    return self::$provider->updateSubject($id, $fach);
+  }
+  public static function getTeacherByUserId(int $userId): ?array
+  {
+    return self::$provider->getTeacherByUserId($userId);
+  }
+  public static function updateTeacher(int $userId, string $vorname, string $nachname): bool
+  {
+    return self::$provider->updateTeacher($userId, $vorname, $nachname);
+  }
+
+  // public static function getOfficeByUserId(int $userId): ?array
+  // {
+  //   return self::$provider->getOfficeByUserId($userId);
+  // }
+  // public static function updateOffice(int $userId, string $vorname, string $nachname, string $email): bool
+  // {
+  //   return self::$provider->updateOffice($userId, $vorname, $nachname, $email);
+  // }
+
+  public static function getLearnerByUserId(int $userId): ?array
+  {
+    return self::$provider->getLearnerByUserId($userId);
+  }
+  public static function updateLearner(int $userId, string $vorname, string $nachname, int $klasseId): bool
+  {
+    return self::$provider->updateLearner($userId, $vorname, $nachname, $klasseId);
+  }
+
+  public static function getClassById(int $id): ?array
+  {
+    return self::$provider->getClassById($id);
+  }
+  public static function updateClass(int $id, string $klasse): bool
+  {
+    return self::$provider->updateClass($id, $klasse);
+  }
+
+  public static function getAllClasses(): array
+  {
+    return self::$provider->getAllClasses();
+  }
+
+  // Classes: Lehrer-Zuordnung
+  public static function getAllTeachersForAssign(): array
+  {
+    return self::$provider->getAllTeachersForAssign();
+  }
+  public static function getTeacherIdsByClassId(int $classId): array
+  {
+    return self::$provider->getTeacherIdsByClassId($classId);
+  }
+  public static function updateClassTeachers(int $classId, array $teacherIds): bool
+  {
+    return self::$provider->updateClassTeachers($classId, $teacherIds);
+  }
+  public static function getAllOfficesWithRoles(): array
+  {
+    return self::$provider->getAllOfficesWithRoles();
+  }
+  public static function getOfficesPaginated(
+    int $page,
+    int $perPage,
+    ?string $sort,
+    string $dir,
+    ?string $q,
+    array $fields,
+    bool $matchAll
+  ): array {
+    return self::$provider->getOfficesPaginated($page, $perPage, $sort, $dir, $q, $fields, $matchAll);
   }
 }
