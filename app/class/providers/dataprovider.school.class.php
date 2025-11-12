@@ -58,7 +58,7 @@ abstract class DataProviderSchool
   abstract public function updateTeacherSubjects(int $userId, array $subjectIds): bool;
 
   // Verwaltungsrollen
-  abstract public function getAllVerwaltungsRollen(): array;
+  // abstract public function getAllVerwaltungsRollen(): array;
   abstract public function getVerwaltungsrollenMap(): array;
 
   // Offices
@@ -79,4 +79,20 @@ abstract class DataProviderSchool
     array $fields,
     bool $matchAll
   ): array;
+  abstract public function createSubject(string $fach): bool;
+  abstract public function createClass(string $klasse): bool;
+  abstract public function getAllVerwaltungsRollen(): array;
+  // abstract public function createOffice(string $vorname, string $nachname, int $rolleId): bool;
+
+  abstract public function getUsersPaginated(
+    int $page,
+    int $perPage,
+    ?string $sort,
+    string $dir,
+    ?string $q,
+    array $fields,
+    bool $matchAll
+  ): array;
+
+  abstract public function createUser(array $data): bool;
 }

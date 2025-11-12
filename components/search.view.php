@@ -5,6 +5,10 @@ $sort = $_GET['sort'] ?? null;
 $dir = $_GET['dir'] ?? null;
 $perPage = $_GET['perPage'] ?? null;
 $matchAll = isset($_GET['all']) ? ($_GET['all'] === '1') : (bool) ($search['all'] ?? false);
+
+// Reset-Link auf aktuelles Script setzen (statt "?")
+$currentScript = basename($_SERVER['PHP_SELF'] ?? 'index.php');
+$resetHref = $currentScript; // falls perPage behalten werden soll: $currentScript . ($perPage ? ('?perPage=' . urlencode((string)$perPage)) : '');
 ?>
 <form method="get" class="flex flex-col gap-4">
   <div class="flex items-center gap-3">
@@ -27,7 +31,7 @@ $matchAll = isset($_GET['all']) ? ($_GET['all'] === '1') : (bool) ($search['all'
     <button type="submit" class="px-3 py-2 rounded bg-blue-600 text-white text-sm hover:bg-blue-700">
       Suchen
     </button>
-    <a href="?" class="px-3 py-2 rounded border text-sm hover:bg-gray-100 dark:hover:bg-gray-700">Zurücksetzen</a>
+    <a href="<?= htmlspecialchars($resetHref) ?>" class="px-3 py-2 rounded border text-sm hover:bg-gray-100 dark:hover:bg-gray-700">Zurücksetzen</a>
   </div>
 
   <?php if (!empty($search['fields'])): ?>

@@ -1224,4 +1224,246 @@ class MySqlDataProviderSchool extends DataProviderSchool
     }
     return $map;
   }
+
+  public function createSubject(string $fach): bool
+  {
+    $fach = trim($fach);
+    if ($fach === '') return false;
+    $db = $this->dbConnect();
+    $stmt = $db->prepare('INSERT INTO faecher (fach) VALUES (:fach)');
+    return $stmt->execute([':fach' => $fach]);
+  }
+  public function createClass(string $klasse): bool
+  {
+    $klasse = trim($klasse);
+    if ($klasse === '') return false;
+    $db = $this->dbConnect();
+    $stmt = $db->prepare('INSERT INTO klassen (klasse) VALUES (:klasse)');
+    return $stmt->execute([':klasse' => $klasse]);
+  }
+
+  public function createOffice(string $vorname, string $nachname, int $rolleId): bool
+  {
+    $vorname = trim($vorname);
+    $nachname = trim($nachname);
+    if ($vorname === '' || $nachname === '' || $rolleId <= 0) return false;
+
+    $db = $this->dbConnect();
+    try {
+      $db->beginTransaction();
+
+      // 1) User anlegen (Minimalfelder: vorname, nachname)
+      $stmtU = $db->prepare('INSERT INTO users (vorname, nachname) VALUES (:v, :n)');
+      $stmtU->execute([':v' => $vorname, ':n' => $nachname]);
+      $userId = (int)$db->lastInsertId();
+
+      // 2) Verwaltung-Eintrag mit Rolle verknüpfen
+      $stmtV = $db->prepare('INSERT INTO verwaltung (user_id, verwaltungs_rolle_id) VALUES (:uid, :rid)');
+      $stmtV->execute([':uid' => $userId, ':rid' => $rolleId]);
+
+      $db->commit();
+      return true;
+    } catch (Throwable $e) {
+      if ($db->inTransaction()) $db->rollBack();
+      return false;
+    }
+  }
+
+  public function getUsersPaginated(
+    int $page,
+    int $perPage,
+    ?string $sort,
+    string $dir,
+    ?string $q,
+    array $fields,
+    bool $matchAll
+  ): array {
+    $db = $this->dbConnect();
+
+    $stmt = $db->query(
+      'SELECT u.id,
+                u.email,
+                u.password_hash,
+                u.vorname,
+                u.nachname,
+                u.adresse,
+                u.plz,
+                u.telefon,
+                u.geburtstag,
+                u.role_id,
+                r.status AS rolle,
+                u.created,
+                u.updated
+         FROM users u
+         LEFT JOIN roles r ON r.id = u.role_id'
+    );
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+    // Felder bestimmen
+    $searchFields = [];
+    foreach ($fields as $f) {
+      $searchFields[] = is_array($f) ? (string)($f['key'] ?? '') : (string)$f;
+    }
+    $searchFields = array_filter($searchFields) ?: ['vorname', 'nachname', 'email', 'rolle'];
+
+    // Suche
+    if ($q) {
+      $qLower = function_exists('mb_strtolower') ? mb_strtolower($q) : strtolower($q);
+      $terms = preg_split('/\s+/', $qLower, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+      $rows = array_values(array_filter($rows, function ($r) use ($terms, $searchFields, $matchAll) {
+        $toLower = function (string $s): string {
+          return function_exists('mb_strtolower') ? mb_strtolower($s) : strtolower($s);
+        };
+        $hayParts = [];
+        foreach ($searchFields as $f) {
+          $hayParts[] = $toLower((string)($r[$f] ?? ''));
+        }
+        $hay = implode(' ', $hayParts);
+        if ($matchAll) {
+          foreach ($terms as $t) {
+            if (strpos($hay, $t) === false) return false;
+          }
+          return true;
+        }
+        foreach ($terms as $t) {
+          if (strpos($hay, $t) !== false) return true;
+        }
+        return empty($terms);
+      }));
+    }
+
+    // Sortierung
+    $sort = $sort ?: 'nachname';
+    $dir = strtolower($dir) === 'desc' ? 'desc' : 'asc';
+    $allowedSort = ['vorname', 'nachname', 'email', 'rolle'];
+    if (!in_array($sort, $allowedSort, true)) $sort = 'nachname';
+
+    usort($rows, function ($a, $b) use ($sort, $dir) {
+      $toLower = function (string $s): string {
+        return function_exists('mb_strtolower') ? mb_strtolower($s) : strtolower($s);
+      };
+      $va = $toLower((string)($a[$sort] ?? ''));
+      $vb = $toLower((string)($b[$sort] ?? ''));
+      $cmp = $va <=> $vb;
+      return $dir === 'desc' ? -$cmp : $cmp;
+    });
+
+    // Pagination
+    $total = count($rows);
+    $perPage = max(1, $perPage);
+    $pages = max(1, (int)ceil($total / $perPage));
+    $page = max(1, min($page, $pages));
+    $offset = ($page - 1) * $perPage;
+    $items = array_slice($rows, $offset, $perPage);
+
+    return [
+      'items'    => $items,
+      'total'    => $total,
+      'pages'    => $pages,
+      'page'     => $page,
+      'perPage'  => $perPage,
+      'hasPrev'  => $page > 1,
+      'hasNext'  => $page < $pages,
+      'prevPage' => $page > 1 ? $page - 1 : null,
+      'nextPage' => $page < $pages ? $page + 1 : null,
+    ];
+  }
+  public function createUser(array $data): bool
+  {
+    $db = $this->dbConnect();
+
+    $email    = trim((string)($data['email'] ?? ''));
+    $password = (string)($data['password'] ?? '');
+    $vorname  = trim((string)($data['vorname'] ?? ''));
+    $nachname = trim((string)($data['nachname'] ?? ''));
+
+    if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) return false;
+    if ($password === '' || strlen($password) < 6) return false;
+    if ($vorname === '' || $nachname === '') return false;
+
+    $adresse    = (string)($data['adresse'] ?? '');
+    $plz        = (string)($data['plz'] ?? '');
+    $telefon    = (string)($data['telefon'] ?? '');
+    $geburtstag = (string)($data['geburtstag'] ?? '');
+    
+    if ($geburtstag !== '') {
+      $dt = DateTime::createFromFormat('Y-m-d', $geburtstag);
+      $errs = DateTime::getLastErrors();
+      if (!$dt || !empty($errs['warning_count']) || !empty($errs['error_count'])) {
+        $geburtstag = '';
+      } else {
+        $geburtstag = $dt->format('Y-m-d');
+      }
+    }
+
+    $role_id        = ($data['role_id'] ?? '') !== '' ? (int)$data['role_id'] : null;
+    $klasse_id      = (int)($data['klasse_id'] ?? 0);
+    $verwaltungsRid = (int)($data['verwaltungs_rolle_id'] ?? 0);
+
+    $pwdHash = password_hash($password, PASSWORD_DEFAULT);
+
+    $fields = ['email', 'password_hash', 'vorname', 'nachname'];
+    $params = [
+      ':email' => $email,
+      ':password_hash' => $pwdHash,
+      ':vorname' => $vorname,
+      ':nachname' => $nachname,
+    ];
+    if ($adresse !== '') {
+      $fields[] = 'adresse';
+      $params[':adresse'] = $adresse;
+    }
+    if ($plz !== '') {
+      $fields[] = 'plz';
+      $params[':plz'] = $plz;
+    }
+    if ($telefon !== '') {
+      $fields[] = 'telefon';
+      $params[':telefon'] = $telefon;
+    }
+    if ($geburtstag !== '') {
+      $fields[] = 'geburtstag';
+      $params[':geburtstag'] = $geburtstag;
+    }
+    if ($role_id !== null) {
+      $fields[] = 'role_id';
+      $params[':role_id'] = $role_id;
+    }
+
+    $placeholders = ':' . implode(',:', $fields);
+    $sql = 'INSERT INTO users (' . implode(',', $fields) . ') VALUES (' . $placeholders . ')';
+
+    try {
+      $db->beginTransaction();
+
+      // User
+      $stmt = $db->prepare($sql);
+      $stmt->execute($params);
+      $userId = (int)$db->lastInsertId();
+      if ($userId <= 0) throw new RuntimeException('User insert failed');
+
+      // Zuordnungen je Rolle
+      if ($role_id === 1 && $klasse_id > 0) {
+        $stmtL = $db->prepare('INSERT INTO schueler (user_id, klasse_id) VALUES (:uid, :kid)');
+        $stmtL->execute([':uid' => $userId, ':kid' => $klasse_id]);
+      } elseif ($role_id === 2) {
+        $stmtT = $db->prepare('INSERT INTO lehrer (user_id) VALUES (:uid)');
+        $stmtT->execute([':uid' => $userId]);
+      } elseif ($role_id === 3) {
+        if ($verwaltungsRid > 0) {
+          $stmtV = $db->prepare('INSERT INTO verwaltung (user_id, verwaltungs_rolle_id) VALUES (:uid, :rid)');
+          $stmtV->execute([':uid' => $userId, ':rid' => $verwaltungsRid]);
+        } else {
+          $stmtV = $db->prepare('INSERT INTO verwaltung (user_id) VALUES (:uid)');
+          $stmtV->execute([':uid' => $userId]);
+        }
+      }
+
+      $db->commit();
+      return true;
+    } catch (Throwable $e) {
+      if ($db->inTransaction()) $db->rollBack();
+      return false;
+    }
+  }
 }

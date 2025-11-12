@@ -77,10 +77,10 @@ class DataSchool
   }
 
   // Verwaltungsrollen
-  public static function getAllVerwaltungsRollen(): array
-  {
-    return self::$provider->getAllVerwaltungsRollen();
-  }
+  // public static function getAllVerwaltungsRollen(): array
+  // {
+  //   return self::$provider->getAllVerwaltungsRollen();
+  // }
   public static function getVerwaltungsrollenMap(): array
   {
     return self::$provider->getVerwaltungsrollenMap();
@@ -193,5 +193,39 @@ class DataSchool
     bool $matchAll
   ): array {
     return self::$provider->getOfficesPaginated($page, $perPage, $sort, $dir, $q, $fields, $matchAll);
+  }
+  public static function createSubject(string $fach): bool
+  {
+    return self::$provider->createSubject($fach);
+  }
+  public static function createClass(string $klasse): bool
+  {
+    return self::$provider->createClass($klasse);
+  }
+  public static function getAllVerwaltungsRollen(): array
+  {
+    return self::$provider->getAllVerwaltungsRollen();
+  }
+
+  // public static function createOffice(string $vorname, string $nachname, int $rolleId): bool
+  // {
+  //   return self::$provider->createOffice($vorname, $nachname, $rolleId);
+  // }
+
+  public static function getUsersPaginated(
+    int $page,
+    int $perPage,
+    ?string $sort,
+    string $dir,
+    ?string $q,
+    array $fields,
+    bool $matchAll
+  ): array {
+    return self::$provider->getUsersPaginated($page, $perPage, $sort, $dir, $q, $fields, $matchAll);
+  }
+
+  public static function createUser(array $data): bool
+  {
+    return self::$provider->createUser($data);
   }
 }
