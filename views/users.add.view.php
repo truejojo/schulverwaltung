@@ -56,9 +56,9 @@
         <select id="role_id" name="role_id"
           class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900">
           <option value="">(keine)</option>
-          <option value="1">Schüler</option>
-          <option value="2">Lehrer</option>
-          <option value="3">Verwaltung</option>
+          <option value="1" <?= (isset($prefillRole) && (int)$prefillRole===1)?'selected':''; ?>>Schüler</option>
+          <option value="2" <?= (isset($prefillRole) && (int)$prefillRole===2)?'selected':''; ?>>Lehrer</option>
+          <option value="3" <?= (isset($prefillRole) && (int)$prefillRole===3)?'selected':''; ?>>Verwaltung</option>
         </select>
       </div>
 

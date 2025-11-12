@@ -228,4 +228,20 @@ class DataSchool
   {
     return self::$provider->createUser($data);
   }
+
+  // Get, Update, Delete User
+  public static function getUserById(int $id): ?array
+  {
+    return self::$provider->getUserById($id); // provider() an dein Projekt anpassen
+  }
+
+  public static function updateUser(int $id, array $data): bool
+  {
+    return self::$provider->updateUser($id, $data);
+  }
+
+  public static function deleteUser(int $id): bool
+  {
+    return self::$provider->deleteUser($id);
+  }
 }

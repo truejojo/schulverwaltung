@@ -95,4 +95,9 @@ abstract class DataProviderSchool
   ): array;
 
   abstract public function createUser(array $data): bool;
+
+  // Get, Update, Delete User
+  abstract public function getUserById(int $id): ?array;
+  abstract public function updateUser(int $id, array $data): bool;
+  abstract public function deleteUser(int $id): bool;
 }

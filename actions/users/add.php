@@ -4,6 +4,8 @@ require __DIR__ . '/../../app/app.php';
 
 $title = 'Benutzer anlegen';
 
+$prefillRole = (int)($_GET['role'] ?? 0);
+
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
   $data = [
     'email'      => trim((string)($_POST['email'] ?? '')),

@@ -1385,7 +1385,7 @@ class MySqlDataProviderSchool extends DataProviderSchool
     $plz        = (string)($data['plz'] ?? '');
     $telefon    = (string)($data['telefon'] ?? '');
     $geburtstag = (string)($data['geburtstag'] ?? '');
-    
+
     if ($geburtstag !== '') {
       $dt = DateTime::createFromFormat('Y-m-d', $geburtstag);
       $errs = DateTime::getLastErrors();
@@ -1464,6 +1464,129 @@ class MySqlDataProviderSchool extends DataProviderSchool
     } catch (Throwable $e) {
       if ($db->inTransaction()) $db->rollBack();
       return false;
+    }
+  }
+
+  // Get, Update, Delete User
+  public function getUserById(int $id): ?array
+  {
+    $db = $this->dbConnect();
+    $stmt = $db->prepare('
+    SELECT u.id, u.email, u.vorname, u.nachname, u.adresse, u.plz, u.telefon, u.geburtstag, u.role_id
+    FROM users u
+    WHERE u.id = :id
+    LIMIT 1
+  ');
+    $stmt->execute([':id' => $id]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$row) return null;
+    return [
+      'id' => (int)$row['id'],
+      'email' => (string)($row['email'] ?? ''),
+      'vorname' => (string)($row['vorname'] ?? ''),
+      'nachname' => (string)($row['nachname'] ?? ''),
+      'adresse' => (string)($row['adresse'] ?? ''),
+      'plz' => (string)($row['plz'] ?? ''),
+      'telefon' => (string)($row['telefon'] ?? ''),
+      'geburtstag' => (string)($row['geburtstag'] ?? ''),
+      'role_id' => isset($row['role_id']) ? (int)$row['role_id'] : null,
+    ];
+  }
+
+  public function updateUser(int $id, array $data): bool
+  {
+    $db = $this->dbConnect();
+
+    $email    = trim((string)($data['email'] ?? ''));
+    $vorname  = trim((string)($data['vorname'] ?? ''));
+    $nachname = trim((string)($data['nachname'] ?? ''));
+    if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) return false;
+    if ($vorname === '' || $nachname === '') return false;
+
+    $adresse    = (string)($data['adresse'] ?? '');
+    $plz        = (string)($data['plz'] ?? '');
+    $telefon    = (string)($data['telefon'] ?? '');
+    $geburtstag = (string)($data['geburtstag'] ?? '');
+    if ($geburtstag !== '') {
+      $dt = DateTime::createFromFormat('Y-m-d', $geburtstag);
+      $errs = DateTime::getLastErrors();
+      if (!$dt || !empty($errs['warning_count']) || !empty($errs['error_count'])) {
+        $geburtstag = '';
+      } else {
+        $geburtstag = $dt->format('Y-m-d');
+      }
+    }
+
+    $fields = ['email = :email', 'vorname = :vorname', 'nachname = :nachname'];
+    $params = [':email' => $email, ':vorname' => $vorname, ':nachname' => $nachname, ':id' => $id];
+
+    $fields[] = 'adresse = :adresse';
+    $params[':adresse'] = $adresse;
+    $fields[] = 'plz = :plz';
+    $params[':plz'] = $plz;
+    $fields[] = 'telefon = :telefon';
+    $params[':telefon'] = $telefon;
+    $fields[] = 'geburtstag = :geburtstag';
+    $params[':geburtstag'] = $geburtstag;
+
+    // Optional: Passwort ändern, wenn gesetzt und min. 6 Zeichen
+    $password = (string)($data['password'] ?? '');
+    if ($password !== '' && strlen($password) >= 6) {
+      $fields[] = 'password_hash = :pwd';
+      $params[':pwd'] = password_hash($password, PASSWORD_DEFAULT);
+    }
+
+    $sql = 'UPDATE users SET ' . implode(', ', $fields) . ' WHERE id = :id';
+    $stmt = $db->prepare($sql);
+    return $stmt->execute($params);
+  }
+
+  public function deleteUser(int $id): bool
+  {
+    $db = $this->dbConnect();
+    $db->beginTransaction();
+    try {
+      // Lehrer-ID holen (falls vorhanden)
+      $stmt = $db->prepare('SELECT id FROM lehrer WHERE user_id = :uid LIMIT 1');
+      $stmt->execute([':uid' => $id]);
+      $lehrerId = (int)($stmt->fetchColumn() ?: 0);
+
+      if ($lehrerId > 0) {
+        // Kindtabellen zu Lehrer
+        $this->safeExec($db, 'DELETE FROM lehrer_fach WHERE lehrer_id = :lid', [':lid' => $lehrerId]);
+        $this->safeExec($db, 'DELETE FROM klassen_lehrer WHERE lehrer_id = :lid', [':lid' => $lehrerId]);
+        $this->safeExec($db, 'DELETE FROM lehrer WHERE id = :lid', [':lid' => $lehrerId]);
+      }
+
+      // Schüler/Verwaltungseinträge
+      $this->safeExec($db, 'DELETE FROM schueler WHERE user_id = :uid', [':uid' => $id]);
+      $this->safeExec($db, 'DELETE FROM verwaltung WHERE user_id = :uid', [':uid' => $id]);
+
+      // Optionale, projektabhängige Tabellen (ignoriert, wenn nicht vorhanden)
+      $this->safeExec($db, 'DELETE FROM user_sessions WHERE user_id = :uid', [':uid' => $id]);
+      $this->safeExec($db, 'DELETE FROM sessions WHERE user_id = :uid', [':uid' => $id]);
+      $this->safeExec($db, 'DELETE FROM password_reset_tokens WHERE user_id = :uid', [':uid' => $id]);
+
+      // User löschen (nachdem alle Referenzen entfernt sind)
+      $stmt = $db->prepare('DELETE FROM users WHERE id = :uid');
+      $stmt->execute([':uid' => $id]);
+
+      $db->commit();
+      return true;
+    } catch (Throwable $e) {
+      if ($db->inTransaction()) $db->rollBack();
+      // optional: error_log('[deleteUser] '.$e->getMessage());
+      return false;
+    }
+  }
+
+  private function safeExec(PDO $db, string $sql, array $params = []): void
+  {
+    try {
+      $stmt = $db->prepare($sql);
+      $stmt->execute($params);
+    } catch (Throwable $e) {
+      // optional: error_log('[deleteUser:safeExec] '.$e->getMessage());
     }
   }
 }

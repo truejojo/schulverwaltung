@@ -5,15 +5,21 @@
  * @var array    $rows
  * @var string   $emptyMessage
  * @var array|null $pagination
- * @var array|null   $search
+ * @var array|null $search
  */
 $emptyMessage = $emptyMessage ?? 'Keine Einträge gefunden.';
 
-// gleiche Bedingung wie in der Tabelle
 $canManage =
   (function_exists('is_user_authenticated') ? is_user_authenticated() : false) &&
   (function_exists('user_has_role_id') ? user_has_role_id(3) : false) &&
   (function_exists('user_is_verwaltungs_admin') ? user_is_verwaltungs_admin() : false);
+
+// Ermitteln welches Script eingebunden hat
+$currentScript = basename($_SERVER['PHP_SELF']); // z.B. learners.php / teachers.php / offices.php
+$noAddFor = ['learners.php','teachers.php','offices.php'];
+
+// Flag ob Add-Block gezeigt werden darf
+$showAddBlock = !in_array($currentScript, $noAddFor, true);
 ?>
 
 <div class="max-w-5xl mx-auto py-8 px-4 space-y-6">
@@ -31,7 +37,7 @@ $canManage =
   </div>
   <?php endif; ?>
 
-  <?php if (!empty($rows) && $canManage): ?>
+  <?php if (!empty($rows) && $canManage && $showAddBlock): ?>
   <div class="border rounded p-3 border-gray-200 dark:border-gray-700">
     <?php require APP_PATH . '/components/add-entity.view.php'; ?>
   </div>
